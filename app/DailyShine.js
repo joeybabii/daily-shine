@@ -300,6 +300,13 @@ export default function DailyShine() {
   const [moodViewRange, setMoodViewRange] = useState(7);
   const [learnCategory, setLearnCategory] = useState("all");
   const [expandedGuide, setExpandedGuide] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [aiUsesToday, setAiUsesToday] = useState(0);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  const FREE_AI_LIMIT = 3; // Free users get 3 AI uses per day
+  const aiUsesLeft = isPremium ? Infinity : Math.max(0, FREE_AI_LIMIT - aiUsesToday);
+  const canUseAI = isPremium || aiUsesToday < FREE_AI_LIMIT;
 
   const dayOfYear = getDayOfYear();
   const dateKey = getDateKey();
@@ -367,6 +374,14 @@ export default function DailyShine() {
       try {
         const insightRes = await storage.get("shine-insight-" + dateKey);
         if (insightRes) setWeeklyInsight(JSON.parse(insightRes.value));
+      } catch {}
+      try {
+        const premRes = await storage.get("shine-premium");
+        if (premRes) setIsPremium(JSON.parse(premRes.value));
+      } catch {}
+      try {
+        const usageRes = await storage.get("shine-ai-usage-" + dateKey);
+        if (usageRes) setAiUsesToday(JSON.parse(usageRes.value));
       } catch {}
       setLoaded(true);
       setTimeout(() => setAnimateIn(true), 100);
@@ -527,6 +542,18 @@ export default function DailyShine() {
     } catch {}
   };
 
+  const trackAIUse = async () => {
+    const newCount = aiUsesToday + 1;
+    setAiUsesToday(newCount);
+    try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch {}
+  };
+
+  const togglePremium = async () => {
+    const newVal = !isPremium;
+    setIsPremium(newVal);
+    try { await storage.set("shine-premium", JSON.stringify(newVal)); } catch {}
+  };
+
   const generateInsight = async () => {
     setInsightLoading(true);
     const recentDays = getMoodDays(7);
@@ -544,13 +571,41 @@ export default function DailyShine() {
       })
       .join("; ");
 
+    // Local fallback insight based on actual data
+    const getLocalInsight = () => {
+      const moodDays = recentDays.filter(d => d.mood);
+      const avg = moodDays.length > 0 ? moodDays.reduce((a, d) => a + d.mood, 0) / moodDays.length : 0;
+      const entryCount = Object.keys(journalEntries).length;
+      
+      if (moodDays.length === 0) return {
+        emoji: "🌱", headline: "Your journey is just beginning",
+        insight: "You haven't logged many moods yet, and that's totally okay — every garden starts with bare soil. The fact that you're here and exploring says something good about where you're headed.",
+        suggestion: "Try logging your mood once a day this week — even just tapping an emoji counts."
+      };
+      if (avg >= 4) return {
+        emoji: "☀️", headline: "You're riding a great wave",
+        insight: `You've logged ${moodDays.length} moods this week with an average around ${avg.toFixed(1)}/5. That's a strong week! ${entryCount > 3 ? "Your journaling consistency is paying off — writing things down keeps good energy flowing." : "Consider journaling more to capture what's making this stretch so good."}`,
+        suggestion: "Share your energy — do something kind for someone else this week."
+      };
+      if (avg >= 3) return {
+        emoji: "🌿", headline: "Steady and grounded",
+        insight: `Your mood has been hovering around ${avg.toFixed(1)}/5 this week — not every week has to be a highlight reel. ${streak > 3 ? `Your ${streak}-day streak shows real commitment.` : "Building consistency is the real win here."} Steady days build the foundation for great ones.`,
+        suggestion: "Pick one thing that usually lifts your mood and schedule it this week."
+      };
+      return {
+        emoji: "💜", headline: "Tough week, but you showed up",
+        insight: `This week was harder — your average mood was around ${avg.toFixed(1)}/5. But here's what matters: you're still here, still checking in, still trying. ${moodDays.length >= 5 ? "Logging your mood even on rough days takes real honesty." : "Every check-in is a small act of self-care."}`,
+        suggestion: "Be extra gentle with yourself. Lower the bar and celebrate small wins."
+      };
+    };
+
     try {
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 500,
           system: `You're a warm wellbeing coach analyzing a user's mood and journal data from their positivity app. Give them a personalized weekly insight.
 
 Respond with ONLY a JSON object (no markdown, no backticks):
@@ -564,13 +619,24 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         })
       });
       const data = await response.json();
+      
+      if (data.fallback) {
+        const local = getLocalInsight();
+        setWeeklyInsight(local);
+        try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
+        setInsightLoading(false);
+        return;
+      }
+
       const text = data.content.map(i => i.text || "").join("\n");
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       setWeeklyInsight(parsed);
       try { await storage.set("shine-insight-" + dateKey, JSON.stringify(parsed)); } catch {}
     } catch {
-      setWeeklyInsight(null);
+      const local = getLocalInsight();
+      setWeeklyInsight(local);
+      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
     }
     setInsightLoading(false);
   };
@@ -1141,11 +1207,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               )}
             </div>
 
+            {/* AI Coach */}
+            <AskCoachCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} />
+
             {/* AI Reframe Tool */}
-            <ReframeCard />
+            <ReframeCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} />
 
             {/* Self-Compassion Letter */}
-            <CompassionCard />
+            <CompassionCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} />
 
             {/* Random Act of Kindness */}
             <RandomActCard />
@@ -2022,6 +2091,87 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         )}
       </div>
 
+      {/* Upgrade Modal */}
+      {showUpgrade && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20, animation: "fadeUp 0.3s ease-out"
+        }} onClick={() => setShowUpgrade(false)}>
+          <div style={{
+            background: "linear-gradient(160deg, #FFF8F0, #FEF0E4)",
+            borderRadius: 28, padding: 32, maxWidth: 400, width: "100%",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+            animation: "fadeUp 0.4s ease-out"
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>✨</div>
+              <h2 style={{ fontSize: 26, color: "#3D3028", fontWeight: 400, marginBottom: 8 }}>
+                Unlock Daily Shine Pro
+              </h2>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                color: "#A8957F", lineHeight: 1.5
+              }}>
+                Unlimited AI-powered tools to support your growth every day.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+              {[
+                { icon: "💬", text: "Unlimited AI Coach conversations" },
+                { icon: "🔄", text: "Unlimited thought reframes" },
+                { icon: "💌", text: "Unlimited compassion letters" },
+                { icon: "🧠", text: "Unlimited weekly insights" },
+                { icon: "⚡", text: "Priority AI responses" },
+              ].map((perk, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "10px 14px", background: "rgba(255,255,255,0.6)",
+                  borderRadius: 14
+                }}>
+                  <span style={{ fontSize: 20 }}>{perk.icon}</span>
+                  <span style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#4A3F35"
+                  }}>{perk.text}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => { togglePremium(); setShowUpgrade(false); }} style={{
+              width: "100%", padding: "16px", borderRadius: 100, border: "none",
+              background: isPremium
+                ? "rgba(200,100,100,0.15)"
+                : "linear-gradient(135deg, #E8976B, #D4764A)",
+              color: isPremium ? "#A06050" : "white",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
+              cursor: "pointer", transition: "all 0.3s", marginBottom: 10
+            }}>
+              {isPremium ? "Cancel Pro (switch to free)" : "Upgrade to Pro — $4.99/mo"}
+            </button>
+
+            {!isPremium && (
+              <p style={{
+                textAlign: "center", fontFamily: "'DM Sans', sans-serif",
+                fontSize: 12, color: "#A8957F"
+              }}>
+                Free users get {FREE_AI_LIMIT} AI uses per day
+              </p>
+            )}
+
+            <button onClick={() => setShowUpgrade(false)} style={{
+              width: "100%", padding: "10px", borderRadius: 100,
+              border: "none", background: "transparent",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+              color: "#A8957F", cursor: "pointer"
+            }}>
+              Maybe later
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Navigation */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
@@ -2110,12 +2260,36 @@ function RandomActCard() {
   );
 }
 
-function ReframeCard() {
+function ReframeCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade }) {
   const [negativeThought, setNegativeThought] = useState("");
   const [reframedThought, setReframedThought] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+  const [isAiMode, setIsAiMode] = useState(false);
+
+  // Local fallback reframes — keyword-matched
+  const LOCAL_REFRAMES = [
+    { keywords: ["not good enough", "not enough", "inadequate", "worthless", "useless"], validation: "That feeling of not being enough is painful, and it's more common than you think.", reframe: "You don't have to be perfect to be valuable. Your worth isn't measured by productivity or achievements — it's inherent.", technique: "Self-Compassion Reframe", action: "Write down one thing you did well today, no matter how small." },
+    { keywords: ["fail", "failure", "messed up", "screwed up", "ruined", "mistake"], validation: "Making mistakes feels terrible, especially when you care about doing well.", reframe: "Failure isn't the opposite of success — it's part of it. Every person you admire has a long list of failures you've never seen.", technique: "Growth Mindset Shift", action: "Ask yourself: what's one thing this taught me?" },
+    { keywords: ["alone", "lonely", "no one", "nobody cares", "isolated"], validation: "Feeling disconnected is one of the most painful human experiences.", reframe: "Loneliness is a signal, not a life sentence. It means you value connection — and that capacity is still in you, waiting.", technique: "Evidence-Based Thinking", action: "Send one text to someone you haven't talked to in a while." },
+    { keywords: ["anxious", "anxiety", "worried", "scared", "afraid", "panic", "nervous"], validation: "Anxiety is exhausting, and it's your brain trying to protect you — even when it overshoots.", reframe: "You've survived every anxious moment so far. This feeling is temporary, not a prediction of the future.", technique: "Decatastrophizing", action: "Take three slow breaths: in for 4, hold for 4, out for 6." },
+    { keywords: ["hate myself", "hate my", "self-hate", "disgusting", "ugly", "stupid", "dumb", "idiot"], validation: "Being that harsh with yourself takes a real toll. You don't deserve that cruelty.", reframe: "Would you say this to someone you love? You deserve the same gentleness you'd give a friend in pain.", technique: "Cognitive Restructuring", action: "Look in the mirror and say one kind thing to yourself — even if it feels weird." },
+    { keywords: ["can't", "impossible", "never", "hopeless", "give up", "stuck", "trapped"], validation: "Feeling stuck is incredibly frustrating, especially when you've been trying hard.", reframe: "Feeling stuck isn't the same as being stuck. Sometimes the path forward is just not visible yet — that doesn't mean it doesn't exist.", technique: "Decatastrophizing", action: "Identify one tiny step — not the whole solution, just one step." },
+    { keywords: ["tired", "exhausted", "burnt out", "burnout", "overwhelmed", "too much"], validation: "Your exhaustion is real and valid — not a sign of weakness.", reframe: "Rest isn't quitting. Your body and mind are telling you something important. Listening to that is strength, not laziness.", technique: "Self-Compassion Reframe", action: "Give yourself permission to do 50% today. That's enough." },
+    { keywords: ["behind", "falling behind", "everyone else", "comparison", "compared to"], validation: "Comparing yourself to others is natural, but it almost always distorts reality.", reframe: "You're comparing your behind-the-scenes to everyone else's highlight reel. Their timeline is not your timeline.", technique: "Cognitive Restructuring", action: "Unfollow one account that makes you feel behind." },
+  ];
+
+  const getLocalReframe = (thought) => {
+    const lower = thought.toLowerCase();
+    const match = LOCAL_REFRAMES.find(r => r.keywords.some(k => lower.includes(k)));
+    return match || {
+      validation: "What you're feeling right now is real, and it matters.",
+      reframe: "This thought feels true right now, but feelings aren't facts. You've gotten through hard moments before — this one is no different.",
+      technique: "Cognitive Restructuring",
+      action: "Write this thought on paper, then write a kinder version next to it."
+    };
+  };
 
   const reframe = async () => {
     if (!negativeThought.trim() || loading) return;
@@ -2123,13 +2297,24 @@ function ReframeCard() {
     setError(null);
     setReframedThought(null);
 
+    // If no AI access, use local immediately
+    if (!canUseAI) {
+      const local = getLocalReframe(negativeThought);
+      setReframedThought(local);
+      setIsAiMode(false);
+      setHistory(prev => [...prev, { original: negativeThought.trim(), reframe: local }]);
+      setLoading(false);
+      return;
+    }
+
     try {
+      await trackAIUse();
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 500,
           system: `You are a warm, compassionate cognitive reframing coach inside a daily positivity app called Daily Shine. The user will share a negative thought, and your job is to help them see it from a healthier perspective.
 
 Rules:
@@ -2148,13 +2333,29 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
       });
 
       const data = await response.json();
+      
+      // If API returned fallback signal, use local reframe
+      if (data.fallback) {
+        const local = getLocalReframe(negativeThought);
+        setReframedThought(local);
+        setIsAiMode(false);
+        setHistory(prev => [...prev, { original: negativeThought.trim(), reframe: local }]);
+        setLoading(false);
+        return;
+      }
+
       const text = data.content.map(i => i.text || "").join("\n");
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       setReframedThought(parsed);
+      setIsAiMode(true);
       setHistory(prev => [...prev, { original: negativeThought.trim(), reframe: parsed }]);
     } catch (err) {
-      setError("Couldn't connect right now. Try again in a moment.");
+      // Fallback to local
+      const local = getLocalReframe(negativeThought);
+      setReframedThought(local);
+      setIsAiMode(false);
+      setHistory(prev => [...prev, { original: negativeThought.trim(), reframe: local }]);
     }
     setLoading(false);
   };
@@ -2172,20 +2373,34 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
         }}>
           🔄 Reframe It
         </div>
-        <span style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 10,
-          background: "linear-gradient(135deg, rgba(107,162,232,0.15), rgba(107,162,232,0.05))",
-          padding: "4px 10px", borderRadius: 100,
-          color: "#5B8AC4", fontWeight: 600, letterSpacing: 0.5
-        }}>
-          AI-POWERED
-        </span>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {!isPremium && (
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10,
+              background: aiUsesLeft > 0 ? "rgba(130,180,130,0.12)" : "rgba(200,100,100,0.12)",
+              padding: "4px 8px", borderRadius: 100,
+              color: aiUsesLeft > 0 ? "#5A8A5A" : "#A06050", fontWeight: 600
+            }}>
+              {aiUsesLeft > 0 ? `${aiUsesLeft} free` : "Local mode"}
+            </span>
+          )}
+          {isPremium && (
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10,
+              background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+              padding: "4px 8px", borderRadius: 100,
+              color: "#C4764A", fontWeight: 600
+            }}>
+              ✦ PRO
+            </span>
+          )}
+        </div>
       </div>
       <p style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: 14,
         color: "#A8957F", marginBottom: 16, lineHeight: 1.5
       }}>
-        Type a negative thought and let AI help you see it differently.
+        Type a negative thought and get a healthier perspective.
       </p>
 
       <textarea
@@ -2324,23 +2539,40 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
   );
 }
 
-function CompassionCard() {
+function CompassionCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade }) {
   const [situation, setSituation] = useState("");
   const [letter, setLetter] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const LOCAL_LETTERS = [
+    { greeting: "Hey, I see you right now.", body: "What you're going through is hard, and it's okay to feel the weight of it. You don't have to have it all figured out today. Just being here, still trying — that says more about your strength than you realize.", closing: "With all the kindness you deserve,", signature: "Your Kinder Self" },
+    { greeting: "Hi, I know today is heavy.", body: "You're carrying more than most people see, and that takes real courage. Give yourself the same grace you'd give your best friend. You're not falling apart — you're being human.", closing: "Gently and with love,", signature: "The Part of You That Knows Better" },
+    { greeting: "Hey, take a breath with me.", body: "Whatever happened today doesn't define you. You've been through hard things before and you're still here. That resilience? It's not nothing — it's everything.", closing: "You've got this. I promise.", signature: "Your Compassionate Side" },
+    { greeting: "I know you're being hard on yourself.", body: "But here's what I see: someone who cares deeply, tries their best, and holds themselves to a standard they'd never impose on anyone else. Ease up. You deserve your own kindness.", closing: "With warmth and no judgment,", signature: "Your Wiser Self" },
+    { greeting: "Hey, it's okay to not be okay.", body: "You don't need to perform strength right now. Sometimes the bravest thing is admitting you're struggling. Tomorrow will come with its own energy — for now, just let yourself be where you are.", closing: "Always in your corner,", signature: "Your Kinder Self" },
+  ];
+
+  const getLocalLetter = () => LOCAL_LETTERS[Math.floor(Math.random() * LOCAL_LETTERS.length)];
 
   const generateLetter = async () => {
     if (!situation.trim() || loading) return;
     setLoading(true);
     setLetter(null);
 
+    if (!canUseAI) {
+      setLetter(getLocalLetter());
+      setLoading(false);
+      return;
+    }
+
     try {
+      await trackAIUse();
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 500,
           system: `You are a self-compassion coach inside a positivity app. The user will describe something they're struggling with or feeling bad about. Write them a short, warm letter FROM their most compassionate self TO them.
 
 Rules:
@@ -2359,11 +2591,18 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
       });
 
       const data = await response.json();
+      
+      if (data.fallback) {
+        setLetter(getLocalLetter());
+        setLoading(false);
+        return;
+      }
+
       const text = data.content.map(i => i.text || "").join("\n");
       const clean = text.replace(/```json|```/g, "").trim();
       setLetter(JSON.parse(clean));
     } catch {
-      setLetter(null);
+      setLetter(getLocalLetter());
     }
     setLoading(false);
   };
@@ -2381,14 +2620,28 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
         }}>
           💌 Self-Compassion Letter
         </div>
-        <span style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 10,
-          background: "linear-gradient(135deg, rgba(180,130,196,0.15), rgba(180,130,196,0.05))",
-          padding: "4px 10px", borderRadius: 100,
-          color: "#9B6AAF", fontWeight: 600, letterSpacing: 0.5
-        }}>
-          AI-POWERED
-        </span>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {!isPremium && (
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10,
+              background: aiUsesLeft > 0 ? "rgba(130,180,130,0.12)" : "rgba(200,100,100,0.12)",
+              padding: "4px 8px", borderRadius: 100,
+              color: aiUsesLeft > 0 ? "#5A8A5A" : "#A06050", fontWeight: 600
+            }}>
+              {aiUsesLeft > 0 ? `${aiUsesLeft} free` : "Local mode"}
+            </span>
+          )}
+          {isPremium && (
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10,
+              background: "linear-gradient(135deg, rgba(180,130,196,0.15), rgba(180,130,196,0.05))",
+              padding: "4px 8px", borderRadius: 100,
+              color: "#9B6AAF", fontWeight: 600
+            }}>
+              ✦ PRO
+            </span>
+          )}
+        </div>
       </div>
       <p style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: 14,
@@ -2479,6 +2732,214 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
             Write another letter
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function AskCoachCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade }) {
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const LOCAL_ANSWERS = [
+    "That's a great question. Here's what I'd suggest: start with the smallest possible step. Don't try to solve everything at once — just do one tiny thing today that moves you in the right direction. Momentum builds from there.",
+    "I hear you. When things feel heavy, remember this: you don't have to figure it all out right now. Give yourself permission to take it one day at a time. That's not weakness — it's wisdom.",
+    "Here's something that might help: write down exactly what's bothering you, then ask 'What would I tell my best friend in this situation?' We're usually kinder and wiser when advising others. Turn that compassion inward.",
+    "That's something a lot of people struggle with. Try the 2-minute rule: if something takes less than 2 minutes, do it now. If it's bigger, just commit to working on it for 2 minutes. Starting is the hardest part.",
+    "I think the most important thing here is to be honest with yourself about what you actually want — not what you think you should want. When you align your actions with your real values, things start to feel easier.",
+    "It sounds like you might be overthinking this. Sometimes the best move is to stop analyzing and just take action. You can always course-correct later. Perfection isn't the goal — movement is.",
+  ];
+
+  const askCoach = async () => {
+    if (!question.trim() || loading) return;
+    const userQ = question.trim();
+    setQuestion("");
+    setMessages(prev => [...prev, { role: "user", text: userQ }]);
+    setLoading(true);
+
+    if (!canUseAI) {
+      const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
+      setMessages(prev => [...prev, { role: "coach", text: local, isLocal: true }]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await trackAIUse();
+      const conversationHistory = messages.slice(-6).map(m => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.text
+      }));
+      conversationHistory.push({ role: "user", content: userQ });
+
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 400,
+          system: `You are a warm, wise positivity coach inside an app called Daily Shine. Users come to you with questions about life, mindset, motivation, relationships, stress, self-improvement, and wellbeing.
+
+Rules:
+- Keep answers to 2-4 sentences max
+- Be warm, direct, and practical — like a wise friend, not a therapist
+- Give actionable advice when possible
+- No toxic positivity — be honest but kind
+- If someone seems to be in crisis, gently suggest they talk to a professional or trusted person
+- Never diagnose or prescribe medical/psychological treatment`,
+          messages: conversationHistory
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.fallback) {
+        const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
+        setMessages(prev => [...prev, { role: "coach", text: local, isLocal: true }]);
+        setLoading(false);
+        return;
+      }
+
+      const text = data.content.map(i => i.text || "").join("\n").trim();
+      setMessages(prev => [...prev, { role: "coach", text, isLocal: false }]);
+    } catch {
+      const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
+      setMessages(prev => [...prev, { role: "coach", text: local, isLocal: true }]);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="card" style={{ animation: "fadeUp 0.65s ease-out" }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 16
+      }}>
+        <div style={{
+          fontSize: 11, fontFamily: "'DM Sans', sans-serif",
+          textTransform: "uppercase", letterSpacing: 2,
+          color: "#8B7355", fontWeight: 600
+        }}>
+          💬 Ask Your Coach
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {!isPremium && (
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10,
+              background: aiUsesLeft > 0 ? "rgba(130,180,130,0.12)" : "rgba(200,100,100,0.12)",
+              padding: "4px 10px", borderRadius: 100,
+              color: aiUsesLeft > 0 ? "#5A8A5A" : "#A06050", fontWeight: 600
+            }}>
+              {aiUsesLeft > 0 ? `${aiUsesLeft} free left today` : "Limit reached"}
+            </span>
+          )}
+          {isPremium && (
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10,
+              background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+              padding: "4px 10px", borderRadius: 100,
+              color: "#C4764A", fontWeight: 600
+            }}>
+              ✦ PRO
+            </span>
+          )}
+        </div>
+      </div>
+
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+        color: "#A8957F", marginBottom: 16, lineHeight: 1.5
+      }}>
+        Ask anything about mindset, motivation, stress, or life — your personal positivity coach is here.
+      </p>
+
+      {/* Chat Messages */}
+      {messages.length > 0 && (
+        <div style={{
+          maxHeight: 300, overflowY: "auto", marginBottom: 16,
+          display: "flex", flexDirection: "column", gap: 10,
+          padding: "4px 0"
+        }}>
+          {messages.map((msg, i) => (
+            <div key={i} style={{
+              display: "flex",
+              justifyContent: msg.role === "user" ? "flex-end" : "flex-start"
+            }}>
+              <div style={{
+                maxWidth: "85%", padding: "12px 16px", borderRadius: 18,
+                background: msg.role === "user"
+                  ? "linear-gradient(135deg, #E8976B, #D4A574)"
+                  : "rgba(255,255,255,0.7)",
+                color: msg.role === "user" ? "white" : "#4A3F35",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                lineHeight: 1.5,
+                borderBottomRightRadius: msg.role === "user" ? 6 : 18,
+                borderBottomLeftRadius: msg.role === "coach" ? 6 : 18,
+                border: msg.role === "coach" ? "1px solid rgba(212,165,116,0.15)" : "none",
+                animation: "fadeUp 0.3s ease-out"
+              }}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{
+              display: "flex", justifyContent: "flex-start"
+            }}>
+              <div style={{
+                padding: "12px 20px", borderRadius: 18, borderBottomLeftRadius: 6,
+                background: "rgba(255,255,255,0.7)",
+                border: "1px solid rgba(212,165,116,0.15)",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#A8957F"
+              }}>
+                <span style={{ animation: "pulseGlow 1.5s ease-in-out infinite" }}>Thinking...</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ display: "flex", gap: 10 }}>
+        <input
+          type="text"
+          value={question}
+          onChange={e => setQuestion(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && askCoach()}
+          placeholder={canUseAI ? "Ask me anything..." : "Ask me anything (local mode)..."}
+          style={{
+            flex: 1, padding: "12px 16px",
+            background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+            borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
+            fontSize: 14, color: "#4A3F35", outline: "none"
+          }}
+        />
+        <button onClick={askCoach} disabled={loading || !question.trim()} style={{
+          width: 48, height: 48, borderRadius: 16, border: "none", flexShrink: 0,
+          background: (question.trim() && !loading)
+            ? "linear-gradient(135deg, #E8976B, #D4764A)"
+            : "rgba(212,165,116,0.2)",
+          color: (question.trim() && !loading) ? "white" : "#A8957F",
+          fontSize: 18, cursor: (question.trim() && !loading) ? "pointer" : "default",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 0.3s"
+        }}>
+          ↑
+        </button>
+      </div>
+
+      {/* Upgrade nudge */}
+      {!isPremium && aiUsesLeft === 0 && (
+        <button onClick={onUpgrade} style={{
+          marginTop: 14, width: "100%", padding: "12px", borderRadius: 100,
+          border: "none",
+          background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+          fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+          color: "#C4764A", fontWeight: 500, cursor: "pointer"
+        }}>
+          ✦ Upgrade to Pro for unlimited AI coaching
+        </button>
       )}
     </div>
   );
