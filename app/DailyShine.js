@@ -1,20 +1,37 @@
 'use client';
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "./lib/AuthProvider";
+import { loadUserData, saveUserData, getLocalData, writeToLocal } from "./lib/cloudStorage";
 
-// Storage helpers — wraps localStorage to match the storage API pattern
+// Storage helpers — always writes to localStorage, also syncs to cloud when logged in
 const storage = {
+  _cloudSyncTimer: null,
+  _userId: null,
+
+  setUserId(id) { this._userId = id; },
+
   async get(key) {
     try {
       const val = localStorage.getItem(key);
       return val !== null ? { value: val } : null;
     } catch { return null; }
   },
+
   async set(key, value) {
     try {
       localStorage.setItem(key, value);
+      // Debounced cloud sync
+      if (this._userId) {
+        clearTimeout(this._cloudSyncTimer);
+        this._cloudSyncTimer = setTimeout(() => {
+          const allData = getLocalData();
+          if (allData) saveUserData(this._userId, allData);
+        }, 2000); // Sync 2 seconds after last write
+      }
       return { key, value };
     } catch { return null; }
   },
+
   async delete(key) {
     try {
       localStorage.removeItem(key);
@@ -271,7 +288,8 @@ function seededIndex(seed, arrayLength) {
   return Math.abs(hash) % arrayLength;
 }
 
-export default function DailyShine() {
+export default function DailyShine({ user }) {
+  const { signOut } = useAuth();
   const [loaded, setLoaded] = useState(false);
   const [currentMood, setCurrentMood] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -322,9 +340,28 @@ export default function DailyShine() {
     return "Good evening";
   };
 
-  // Load data from storage
+  // Load data from storage (and sync with cloud if logged in)
   useEffect(() => {
     const load = async () => {
+      // If logged in, sync cloud data first
+      if (user?.id) {
+        storage.setUserId(user.id);
+        try {
+          const cloudData = await loadUserData(user.id);
+          if (cloudData) {
+            // Cloud data exists — write it to localStorage
+            writeToLocal(cloudData);
+          } else {
+            // No cloud data — migrate localStorage to cloud (first login)
+            const localData = getLocalData();
+            if (localData) {
+              await saveUserData(user.id, localData);
+            }
+          }
+        } catch {}
+      }
+
+      // Now load from localStorage (which has cloud data if synced)
       try {
         const moodRes = await storage.get("shine-moods");
         if (moodRes) setMoodHistory(JSON.parse(moodRes.value));
@@ -807,7 +844,21 @@ Respond with ONLY a JSON object (no markdown, no backticks):
       }}>
 
         {/* Header */}
-        <div style={{ textAlign: "center", padding: "30px 0 20px" }}>
+        <div style={{ textAlign: "center", padding: "30px 0 20px", position: "relative" }}>
+          {/* Account button */}
+          <button onClick={() => setActiveTab("account")} style={{
+            position: "absolute", top: 30, right: 0,
+            width: 36, height: 36, borderRadius: "50%",
+            border: user ? "2px solid #E8976B" : "1px solid rgba(212,165,116,0.3)",
+            background: user ? "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))" : "rgba(255,255,255,0.5)",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'DM Sans', sans-serif", fontSize: user ? 14 : 16,
+            color: user ? "#C4764A" : "#A8957F", fontWeight: 600,
+            transition: "all 0.3s"
+          }}>
+            {user ? (user.email?.[0]?.toUpperCase() || "U") : "👤"}
+          </button>
+
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             background: "rgba(232,151,107,0.1)", padding: "8px 20px",
@@ -2087,6 +2138,139 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 }
               </p>
             </div>
+          </div>
+        )}
+
+        {/* ===== ACCOUNT TAB ===== */}
+        {activeTab === "account" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div className="card" style={{
+              textAlign: "center", animation: "fadeUp 0.5s ease-out",
+              background: "linear-gradient(135deg, rgba(232,151,107,0.08), rgba(255,255,255,0.7))"
+            }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%", margin: "0 auto 16px",
+                background: user ? "linear-gradient(135deg, #E8976B, #D4764A)" : "rgba(212,165,116,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: user ? 28 : 32, color: "white", fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700
+              }}>
+                {user ? (user.email?.[0]?.toUpperCase() || "U") : "👤"}
+              </div>
+              {user ? (
+                <div>
+                  <h2 style={{ fontSize: 22, color: "#3D3028", fontWeight: 400, marginBottom: 4 }}>
+                    {user.user_metadata?.full_name || user.email?.split("@")[0] || "You"}
+                  </h2>
+                  <p style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+                    color: "#A8957F", marginBottom: 4
+                  }}>
+                    {user.email}
+                  </p>
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    background: "rgba(130,180,130,0.1)", padding: "4px 12px",
+                    borderRadius: 100, fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 11, color: "#5A8A5A", fontWeight: 500
+                  }}>
+                    ☁️ Synced to cloud
+                  </div>
+                </div>
+            </div>
+
+            {/* Stats Summary */}
+            <div className="card" style={{ animation: "fadeUp 0.6s ease-out" }}>
+              <div style={{
+                fontSize: 11, fontFamily: "'DM Sans', sans-serif",
+                textTransform: "uppercase", letterSpacing: 2,
+                color: "#8B7355", marginBottom: 16, fontWeight: 600
+              }}>
+                Your Journey
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  { label: "Current Streak", value: `${streak} days`, icon: "🔥" },
+                  { label: "Moods Logged", value: Object.keys(moodHistory).length, icon: "📊" },
+                  { label: "Journal Entries", value: Object.keys(journalEntries).length, icon: "📝" },
+                  { label: "Subscription", value: isPremium ? "Pro ✦" : "Free", icon: isPremium ? "💎" : "🌱" },
+                ].map((stat, i) => (
+                  <div key={i} style={{
+                    padding: 14, borderRadius: 16,
+                    background: "rgba(255,255,255,0.5)",
+                    textAlign: "center"
+                  }}>
+                    <div style={{ fontSize: 22, marginBottom: 4 }}>{stat.icon}</div>
+                    <div style={{
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 18,
+                      color: "#3D3028", fontWeight: 600
+                    }}>{stat.value}</div>
+                    <div style={{
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#A8957F"
+                    }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upgrade / Pro status */}
+            <div className="card" style={{
+              animation: "fadeUp 0.7s ease-out", cursor: "pointer",
+              background: isPremium
+                ? "linear-gradient(135deg, rgba(232,151,107,0.1), rgba(255,255,255,0.7))"
+                : undefined
+            }} onClick={() => setShowUpgrade(true)}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 14
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 16,
+                  background: isPremium
+                    ? "linear-gradient(135deg, #E8976B, #D4764A)"
+                    : "rgba(232,151,107,0.12)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22
+                }}>
+                  {isPremium ? "✦" : "⬆️"}
+                </div>
+                <div>
+                  <h3 style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 16,
+                    color: "#3D3028", fontWeight: 600, marginBottom: 2
+                  }}>
+                    {isPremium ? "Daily Shine Pro" : "Upgrade to Pro"}
+                  </h3>
+                  <p style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+                    color: "#A8957F"
+                  }}>
+                    {isPremium ? "Unlimited AI features active" : "Unlimited AI coaching, reframes & more"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sign Out */}
+            {user && (
+              <button onClick={async () => { await signOut(); window.location.reload(); }} style={{
+                padding: "14px", borderRadius: 100,
+                border: "1px solid rgba(200,100,100,0.2)", background: "transparent",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                color: "#A06050", cursor: "pointer", transition: "all 0.3s",
+                animation: "fadeUp 0.8s ease-out"
+              }}>
+                Sign Out
+              </button>
+            )}
+
+            {/* Back button */}
+            <button onClick={() => setActiveTab("home")} style={{
+              padding: "10px", background: "none", border: "none",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+              color: "#A8957F", cursor: "pointer", textAlign: "center"
+            }}>
+              ← Back to Today
+            </button>
           </div>
         )}
       </div>
