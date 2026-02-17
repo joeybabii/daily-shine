@@ -431,9 +431,9 @@ export default function DailyShine({ user }) {
       setLoaded(true);
       setTimeout(() => setAnimateIn(true), 100);
       
-      // Show welcome guide for first-time users
+      // Show welcome guide for first-time users (use direct localStorage, not synced storage)
       try {
-        const hasSeenWelcome = await storage.get("shine-welcome-seen");
+        const hasSeenWelcome = localStorage.getItem("shine-welcome-seen-local");
         if (!hasSeenWelcome) {
           setTimeout(() => setShowWelcome(true), 800);
         }
@@ -912,6 +912,20 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
         {/* Header */}
         <div style={{ textAlign: "center", padding: "30px 0 20px", position: "relative" }}>
+          {/* Help button */}
+          <button onClick={() => { setShowWelcome(true); setWelcomeStep(0); }} style={{
+            position: "absolute", top: 30, right: 44,
+            width: 32, height: 32, borderRadius: "50%",
+            border: "1px solid rgba(212,165,116,0.25)",
+            background: "rgba(255,255,255,0.5)",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+            color: "#A8957F", fontWeight: 600,
+            transition: "all 0.3s"
+          }}>
+            ?
+          </button>
+
           {/* Account button */}
           <button onClick={() => setActiveTab("account")} style={{
             position: "absolute", top: 30, right: 0,
@@ -2465,7 +2479,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 )}
                 <button onClick={() => {
                   if (isLast) {
-                    storage.set("shine-welcome-seen", JSON.stringify(true));
+                    localStorage.setItem("shine-welcome-seen-local", "true");
                     setShowWelcome(false);
                     setWelcomeStep(0);
                   } else {
@@ -2485,7 +2499,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
               {isFirst && (
                 <button onClick={() => {
-                  storage.set("shine-welcome-seen", JSON.stringify(true));
+                  localStorage.setItem("shine-welcome-seen-local", "true");
                   setShowWelcome(false);
                 }} style={{
                   marginTop: 12, padding: "8px", border: "none",
