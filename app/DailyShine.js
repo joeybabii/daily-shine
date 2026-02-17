@@ -428,6 +428,24 @@ export default function DailyShine({ user }) {
         const usageRes = await storage.get("shine-ai-usage-" + dateKey);
         if (usageRes) setAiUsesToday(JSON.parse(usageRes.value));
       } catch { }
+
+      // Server-side verification overrides localStorage for logged-in users
+      if (user?.id) {
+        try {
+          const verifyRes = await fetch('/api/stripe/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          const verifyData = await verifyRes.json();
+          setIsPremium(!!verifyData.isPremium);
+          storage.set("shine-premium", JSON.stringify(!!verifyData.isPremium));
+          if (verifyData.stripeCustomerId) {
+            setStripeCustomerId(verifyData.stripeCustomerId);
+            storage.set("shine-stripe-customer", JSON.stringify(verifyData.stripeCustomerId));
+          }
+        } catch { }
+      }
       setLoaded(true);
       setTimeout(() => setAnimateIn(true), 100);
 
@@ -601,11 +619,7 @@ export default function DailyShine({ user }) {
     try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch { }
   };
 
-  const togglePremium = async () => {
-    const newVal = !isPremium;
-    setIsPremium(newVal);
-    try { await storage.set("shine-premium", JSON.stringify(newVal)); } catch { }
-  };
+
 
   const handleUpgrade = async () => {
     if (!user) return;
@@ -646,13 +660,29 @@ export default function DailyShine({ user }) {
     }
   };
 
-  // Check for ?upgraded=true from Stripe redirect
+  // Check for ?upgraded=true from Stripe redirect — verify with server
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('upgraded') === 'true') {
-        setIsPremium(true);
-        storage.set("shine-premium", JSON.stringify(true));
+        // Verify actual payment status with server instead of blindly trusting URL param
+        if (user?.id) {
+          fetch('/api/stripe/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              setIsPremium(!!data.isPremium);
+              storage.set("shine-premium", JSON.stringify(!!data.isPremium));
+              if (data.stripeCustomerId) {
+                setStripeCustomerId(data.stripeCustomerId);
+                storage.set("shine-stripe-customer", JSON.stringify(data.stripeCustomerId));
+              }
+            })
+            .catch(() => { });
+        }
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
