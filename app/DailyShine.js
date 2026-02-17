@@ -275,7 +275,7 @@ function getDayOfYear() {
 
 function getDateKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function seededIndex(seed, arrayLength) {
@@ -323,6 +323,8 @@ export default function DailyShine({ user }) {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [stripeCustomerId, setStripeCustomerId] = useState(null);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeStep, setWelcomeStep] = useState(0);
 
   const FREE_AI_LIMIT = 3; // Free users get 3 AI uses per day
   const aiUsesLeft = isPremium ? Infinity : Math.max(0, FREE_AI_LIMIT - aiUsesToday);
@@ -360,44 +362,44 @@ export default function DailyShine({ user }) {
               await saveUserData(user.id, localData);
             }
           }
-        } catch { }
+        } catch {}
       }
 
       // Now load from localStorage (which has cloud data if synced)
       try {
         const moodRes = await storage.get("shine-moods");
         if (moodRes) setMoodHistory(JSON.parse(moodRes.value));
-      } catch { }
+      } catch {}
       try {
         const streakRes = await storage.get("shine-streak");
         if (streakRes) setStreak(JSON.parse(streakRes.value));
-      } catch { }
+      } catch {}
       try {
         const chalRes = await storage.get("shine-challenge-" + dateKey);
         if (chalRes) setChallengeCompleted(JSON.parse(chalRes.value));
-      } catch { }
+      } catch {}
       try {
         const gratRes = await storage.get("shine-gratitude-" + dateKey);
         if (gratRes) {
           setGratitudeText(JSON.parse(gratRes.value));
           setGratitudeSaved(true);
         }
-      } catch { }
+      } catch {}
       try {
         const journalRes = await storage.get("shine-journal");
         if (journalRes) setJournalEntries(JSON.parse(journalRes.value));
-      } catch { }
+      } catch {}
       try {
         const winsRes = await storage.get("shine-wins-" + dateKey);
         if (winsRes) {
           setWinsText(JSON.parse(winsRes.value));
           setWinsSaved(true);
         }
-      } catch { }
+      } catch {}
       try {
         const moodTodayRes = await storage.get("shine-mood-today-" + dateKey);
         if (moodTodayRes) setCurrentMood(JSON.parse(moodTodayRes.value));
-      } catch { }
+      } catch {}
       try {
         const eveRes = await storage.get("shine-evening-" + dateKey);
         if (eveRes) {
@@ -409,43 +411,33 @@ export default function DailyShine({ user }) {
           setEveningSaved(true);
           setEveningReflectionSaved(true);
         }
-      } catch { }
+      } catch {}
       try {
         const insightRes = await storage.get("shine-insight-" + dateKey);
         if (insightRes) setWeeklyInsight(JSON.parse(insightRes.value));
-      } catch { }
-      // Load cached premium status from localStorage first (for fast UI)
+      } catch {}
       try {
         const premRes = await storage.get("shine-premium");
         if (premRes) setIsPremium(JSON.parse(premRes.value));
-      } catch { }
+      } catch {}
       try {
         const stripeRes = await storage.get("shine-stripe-customer");
         if (stripeRes) setStripeCustomerId(JSON.parse(stripeRes.value));
-      } catch { }
-      // Server-side verification overrides localStorage for logged-in users
-      if (user?.id) {
-        try {
-          const verifyRes = await fetch('/api/stripe/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          });
-          const verifyData = await verifyRes.json();
-          setIsPremium(!!verifyData.isPremium);
-          storage.set("shine-premium", JSON.stringify(!!verifyData.isPremium));
-          if (verifyData.stripeCustomerId) {
-            setStripeCustomerId(verifyData.stripeCustomerId);
-            storage.set("shine-stripe-customer", JSON.stringify(verifyData.stripeCustomerId));
-          }
-        } catch { }
-      }
+      } catch {}
       try {
         const usageRes = await storage.get("shine-ai-usage-" + dateKey);
         if (usageRes) setAiUsesToday(JSON.parse(usageRes.value));
-      } catch { }
+      } catch {}
       setLoaded(true);
       setTimeout(() => setAnimateIn(true), 100);
+      
+      // Show welcome guide for first-time users
+      try {
+        const hasSeenWelcome = await storage.get("shine-welcome-seen");
+        if (!hasSeenWelcome) {
+          setTimeout(() => setShowWelcome(true), 800);
+        }
+      } catch {}
     };
     load();
   }, []);
@@ -454,13 +446,13 @@ export default function DailyShine({ user }) {
     setCurrentMood(mood);
     const newHistory = { ...moodHistory, [dateKey]: mood };
     setMoodHistory(newHistory);
-
+    
     // Calculate streak
     let s = 1;
     let d = new Date();
     d.setDate(d.getDate() - 1);
     while (true) {
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       if (newHistory[key] !== undefined) {
         s++;
         d.setDate(d.getDate() - 1);
@@ -472,7 +464,7 @@ export default function DailyShine({ user }) {
       await storage.set("shine-moods", JSON.stringify(newHistory));
       await storage.set("shine-streak", JSON.stringify(s));
       await storage.set("shine-mood-today-" + dateKey, JSON.stringify(mood));
-    } catch { }
+    } catch {}
   };
 
   const toggleChallenge = async () => {
@@ -480,7 +472,7 @@ export default function DailyShine({ user }) {
     setChallengeCompleted(newVal);
     try {
       await storage.set("shine-challenge-" + dateKey, JSON.stringify(newVal));
-    } catch { }
+    } catch {}
   };
 
   const saveGratitude = async () => {
@@ -491,7 +483,7 @@ export default function DailyShine({ user }) {
     try {
       await storage.set("shine-gratitude-" + dateKey, JSON.stringify(gratitudeText.trim()));
       await storage.set("shine-journal", JSON.stringify(entries));
-    } catch { }
+    } catch {}
   };
 
   const saveWins = async () => {
@@ -499,7 +491,7 @@ export default function DailyShine({ user }) {
     setWinsSaved(true);
     try {
       await storage.set("shine-wins-" + dateKey, JSON.stringify(winsText));
-    } catch { }
+    } catch {}
   };
 
   // Breathing exercise
@@ -542,7 +534,7 @@ export default function DailyShine({ user }) {
     for (let i = n - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       days.push({
@@ -584,32 +576,36 @@ export default function DailyShine({ user }) {
     };
     setEveningSaved(true);
     setEveningReflectionSaved(true);
-
+    
     // Also save to journal
-    const entries = {
-      ...journalEntries,
-      [dateKey]: {
+    const entries = { 
+      ...journalEntries, 
+      [dateKey]: { 
         ...(journalEntries[dateKey] || {}),
         gratitude: gratitudeText.trim(),
         wins: winsText,
         evening: eveData
-      }
+      } 
     };
     setJournalEntries(entries);
-
+    
     try {
       await storage.set("shine-evening-" + dateKey, JSON.stringify(eveData));
       await storage.set("shine-journal", JSON.stringify(entries));
-    } catch { }
+    } catch {}
   };
 
   const trackAIUse = async () => {
     const newCount = aiUsesToday + 1;
     setAiUsesToday(newCount);
-    try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch { }
+    try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch {}
   };
 
-  // togglePremium removed — premium status is now controlled exclusively by Stripe + server verification
+  const togglePremium = async () => {
+    const newVal = !isPremium;
+    setIsPremium(newVal);
+    try { await storage.set("shine-premium", JSON.stringify(newVal)); } catch {}
+  };
 
   const handleUpgrade = async () => {
     if (!user) return;
@@ -650,33 +646,17 @@ export default function DailyShine({ user }) {
     }
   };
 
-  // Check for ?upgraded=true from Stripe redirect — verify with server
+  // Check for ?upgraded=true from Stripe redirect
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('upgraded') === 'true') {
+        setIsPremium(true);
+        storage.set("shine-premium", JSON.stringify(true));
         window.history.replaceState({}, '', window.location.pathname);
-        // Verify actual payment status with server instead of blindly trusting URL param
-        if (user?.id) {
-          fetch('/api/stripe/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          })
-            .then(res => res.json())
-            .then(data => {
-              setIsPremium(!!data.isPremium);
-              storage.set("shine-premium", JSON.stringify(!!data.isPremium));
-              if (data.stripeCustomerId) {
-                setStripeCustomerId(data.stripeCustomerId);
-                storage.set("shine-stripe-customer", JSON.stringify(data.stripeCustomerId));
-              }
-            })
-            .catch(() => { });
-        }
       }
     }
-  }, [user]);
+  }, []);
 
   const generateInsight = async () => {
     setInsightLoading(true);
@@ -685,7 +665,7 @@ export default function DailyShine({ user }) {
       .filter(d => d.mood)
       .map(d => `${d.label}: ${MOODS[d.mood - 1].label} (${d.mood}/5)`)
       .join(", ");
-
+    
     const recentEntries = Object.keys(journalEntries)
       .sort((a, b) => b.localeCompare(a))
       .slice(0, 5)
@@ -700,7 +680,7 @@ export default function DailyShine({ user }) {
       const moodDays = recentDays.filter(d => d.mood);
       const avg = moodDays.length > 0 ? moodDays.reduce((a, d) => a + d.mood, 0) / moodDays.length : 0;
       const entryCount = Object.keys(journalEntries).length;
-
+      
       if (moodDays.length === 0) return {
         emoji: "🌱", headline: "Your journey is just beginning",
         insight: "You haven't logged many moods yet, and that's totally okay — every garden starts with bare soil. The fact that you're here and exploring says something good about where you're headed.",
@@ -743,11 +723,11 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         })
       });
       const data = await response.json();
-
+      
       if (data.fallback) {
         const local = getLocalInsight();
         setWeeklyInsight(local);
-        try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch { }
+        try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
         setInsightLoading(false);
         return;
       }
@@ -756,11 +736,11 @@ Respond with ONLY a JSON object (no markdown, no backticks):
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       setWeeklyInsight(parsed);
-      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(parsed)); } catch { }
+      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(parsed)); } catch {}
     } catch {
       const local = getLocalInsight();
       setWeeklyInsight(local);
-      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch { }
+      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
     }
     setInsightLoading(false);
   };
@@ -783,7 +763,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
   const gardenStage = [...GARDEN_STAGES].reverse().find(s => totalSeeds >= s.minSeeds) || GARDEN_STAGES[0];
   const nextStage = GARDEN_STAGES[GARDEN_STAGES.indexOf(gardenStage) + 1];
-  const gardenProgress = nextStage
+  const gardenProgress = nextStage 
     ? (totalSeeds - gardenStage.minSeeds) / (nextStage.minSeeds - gardenStage.minSeeds)
     : 1;
 
@@ -1060,11 +1040,11 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   color: "#8B7355", textAlign: "center",
                   animation: "fadeUp 0.4s ease-out"
                 }}>
-                  {currentMood <= 2
+                  {currentMood <= 2 
                     ? "It's okay to have tough days. Be extra gentle with yourself today. 💛"
-                    : currentMood === 3
-                      ? "Steady days matter too. You're doing just fine. 🌿"
-                      : "Love to see it! Let that good energy flow. ☀️"
+                    : currentMood === 3 
+                    ? "Steady days matter too. You're doing just fine. 🌿"
+                    : "Love to see it! Let that good energy flow. ☀️"
                   }
                 </div>
               )}
@@ -1401,7 +1381,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     cursor: "pointer", padding: isOpen ? 28 : 22,
                     background: isOpen ? "rgba(255,255,255,0.8)" : undefined
                   }} onClick={() => setExpandedGuide(isOpen ? null : guide.id)}>
-
+                    
                     {/* Header */}
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{
@@ -1518,7 +1498,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         {/* ===== EVENING TAB ===== */}
         {activeTab === "evening" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
+            
             {/* Evening Header */}
             <div className="card" style={{
               textAlign: "center", animation: "fadeUp 0.5s ease-out",
@@ -1547,12 +1527,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 Rate Your Day
               </div>
               <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                {[1,2,3,4,5,6,7,8,9,10].map(n => (
                   <button key={n} onClick={() => !eveningSaved && setEveningRating(n)} style={{
                     width: 36, height: 36, borderRadius: 10,
                     border: eveningRating === n ? "2px solid #9B7DC8" : "1px solid rgba(212,165,116,0.2)",
-                    background: eveningRating !== null && n <= eveningRating
-                      ? `rgba(155,125,200,${0.1 + (n / 10) * 0.3})`
+                    background: eveningRating !== null && n <= eveningRating 
+                      ? `rgba(155,125,200,${0.1 + (n/10) * 0.3})`
                       : "rgba(255,255,255,0.5)",
                     cursor: eveningSaved ? "default" : "pointer",
                     fontFamily: "'DM Sans', sans-serif", fontSize: 13,
@@ -1570,10 +1550,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   fontFamily: "'DM Sans', sans-serif", fontSize: 13,
                   color: "#9B7DC8", animation: "fadeUp 0.3s ease-out"
                 }}>
-                  {eveningRating <= 3 ? "Tough day. Tomorrow is a clean slate. 💜"
-                    : eveningRating <= 6 ? "A solid day. Not every day has to be a 10. 🌿"
-                      : eveningRating <= 8 ? "Good day! Hold onto that energy. ✨"
-                        : "What a great day! You earned that. 🌟"}
+                  {eveningRating <= 3 ? "Tough day. Tomorrow is a clean slate. 💜" 
+                   : eveningRating <= 6 ? "A solid day. Not every day has to be a 10. 🌿"
+                   : eveningRating <= 8 ? "Good day! Hold onto that energy. ✨"
+                   : "What a great day! You earned that. 🌟"}
                 </p>
               )}
             </div>
@@ -1755,7 +1735,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   background: "linear-gradient(180deg, #C8B896 0%, #B8A880 100%)",
                   borderRadius: "50% 50% 0 0"
                 }} />
-
+                
                 {/* Plants based on seeds */}
                 <div style={{
                   position: "relative", zIndex: 1, display: "flex",
@@ -1876,14 +1856,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {/* Mood Line Graph */}
               <div style={{ position: "relative", height: 140, marginBottom: 8 }}>
                 {/* Grid lines */}
-                {[1, 2, 3, 4, 5].map(level => (
+                {[1,2,3,4,5].map(level => (
                   <div key={level} style={{
                     position: "absolute", left: 0, right: 0,
                     bottom: `${(level - 1) * 25}%`, height: 1,
                     background: "rgba(212,165,116,0.1)"
                   }} />
                 ))}
-
+                
                 {/* SVG Line */}
                 <svg width="100%" height="100%" viewBox={`0 0 ${moodViewRange * 20} 140`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
                   {(() => {
@@ -1891,12 +1871,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     const points = days
                       .map((d, i) => d.mood ? { x: i * (moodViewRange * 20 / (moodViewRange - 1)), y: 140 - ((d.mood - 1) / 4) * 120 - 10 } : null)
                       .filter(Boolean);
-
+                    
                     if (points.length < 2) return null;
-
+                    
                     const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-                    const areaData = pathData + ` L ${points[points.length - 1].x} 140 L ${points[0].x} 140 Z`;
-
+                    const areaData = pathData + ` L ${points[points.length-1].x} 140 L ${points[0].x} 140 Z`;
+                    
                     return (
                       <>
                         <defs>
@@ -2095,7 +2075,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     const isExpanded = journalViewExpanded === entry.key;
                     const moodForDay = moodHistory[entry.key];
                     return (
-                      <div key={i}
+                      <div key={i} 
                         onClick={() => setJournalViewExpanded(isExpanded ? null : entry.key)}
                         style={{
                           padding: "14px 18px", borderRadius: 16,
@@ -2215,13 +2195,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <p style={{
                 fontSize: 18, color: "#3D3028", fontStyle: "italic", lineHeight: 1.5
               }}>
-                {streak === 0
+                {streak === 0 
                   ? "Every journey starts with a single step. Log your mood to begin your streak!"
-                  : streak < 3
-                    ? "You're building something beautiful. Keep showing up for yourself."
-                    : streak < 7
-                      ? `${streak} days of choosing positivity. You're on fire! 🔥`
-                      : `${streak} days strong. You're proof that consistency changes everything. 🌟`
+                  : streak < 3 
+                  ? "You're building something beautiful. Keep showing up for yourself."
+                  : streak < 7
+                  ? `${streak} days of choosing positivity. You're on fire! 🔥`
+                  : `${streak} days strong. You're proof that consistency changes everything. 🌟`
                 }
               </p>
             </div>
@@ -2264,7 +2244,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     ☁️ Synced to cloud
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
 
             {/* Stats Summary */}
@@ -2362,6 +2342,163 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           </div>
         )}
       </div>
+
+      {/* Welcome Guide */}
+      {showWelcome && (() => {
+        const welcomeSlides = [
+          {
+            icon: "🌟",
+            title: "Welcome to Daily Shine",
+            desc: "Your daily companion for positivity, mindfulness, and personal growth. Let's show you around!",
+            color: "#E8976B"
+          },
+          {
+            icon: "☀️",
+            title: "Today Tab",
+            desc: "Start each day with an affirmation, log your mood, complete a challenge, and write what you're grateful for. Your daily positivity ritual.",
+            color: "#E8B86B"
+          },
+          {
+            icon: "🧰",
+            title: "Tools Tab",
+            desc: "Powerful AI tools when you need support: an AI Coach to talk to, thought reframing, self-compassion letters, and a breathing exercise.",
+            color: "#7BB88E"
+          },
+          {
+            icon: "📖",
+            title: "Learn Tab",
+            desc: "Explore guides on mindfulness, gratitude, resilience, and emotional intelligence. Build your knowledge at your own pace.",
+            color: "#6BA5C9"
+          },
+          {
+            icon: "🌙",
+            title: "Evening Tab",
+            desc: "Wind down with evening reflections, rate your day, set tomorrow's intention, and let go of anything weighing you down.",
+            color: "#9B7EC9"
+          },
+          {
+            icon: "🌱",
+            title: "Progress Tab",
+            desc: "Track your mood patterns, review journal entries, and see weekly AI-powered insights about your emotional journey.",
+            color: "#7BB88E"
+          },
+          {
+            icon: "✨",
+            title: "Free & Pro",
+            desc: "You get 3 free AI uses per day. Upgrade to Pro for unlimited AI coaching, reframes, compassion letters, and insights — $4.99/mo.",
+            color: "#E8976B"
+          },
+          {
+            icon: "🚀",
+            title: "You're all set!",
+            desc: "Start by logging your mood on the Today tab. Every small step counts. Your positivity journey begins now!",
+            color: "#D4764A"
+          },
+        ];
+        const slide = welcomeSlides[welcomeStep];
+        const isLast = welcomeStep === welcomeSlides.length - 1;
+        const isFirst = welcomeStep === 0;
+
+        return (
+          <div style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20, animation: "fadeUp 0.3s ease-out"
+          }}>
+            <div style={{
+              background: "linear-gradient(160deg, #FFF8F0, #FEF0E4)",
+              borderRadius: 28, padding: 32, maxWidth: 380, width: "100%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+              animation: "fadeUp 0.4s ease-out",
+              textAlign: "center"
+            }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: 24,
+                background: `${slide.color}20`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 20px", fontSize: 40,
+                transition: "all 0.3s"
+              }}>
+                {slide.icon}
+              </div>
+
+              <h2 style={{
+                fontSize: 22, color: "#3D3028", fontWeight: 400,
+                marginBottom: 10, fontFamily: "'Playfair Display', serif"
+              }}>
+                {slide.title}
+              </h2>
+
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                color: "#6B5D4F", lineHeight: 1.6, marginBottom: 28
+              }}>
+                {slide.desc}
+              </p>
+
+              {/* Progress dots */}
+              <div style={{
+                display: "flex", justifyContent: "center", gap: 6, marginBottom: 20
+              }}>
+                {welcomeSlides.map((_, i) => (
+                  <div key={i} style={{
+                    width: i === welcomeStep ? 20 : 6,
+                    height: 6, borderRadius: 3,
+                    background: i === welcomeStep ? slide.color : "rgba(0,0,0,0.1)",
+                    transition: "all 0.3s"
+                  }} />
+                ))}
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: "flex", gap: 10 }}>
+                {!isFirst && (
+                  <button onClick={() => setWelcomeStep(s => s - 1)} style={{
+                    flex: 1, padding: "14px", borderRadius: 100,
+                    border: "1px solid rgba(0,0,0,0.1)", background: "white",
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                    color: "#6B5D4F", cursor: "pointer", fontWeight: 500
+                  }}>
+                    Back
+                  </button>
+                )}
+                <button onClick={() => {
+                  if (isLast) {
+                    storage.set("shine-welcome-seen", JSON.stringify(true));
+                    setShowWelcome(false);
+                    setWelcomeStep(0);
+                  } else {
+                    setWelcomeStep(s => s + 1);
+                  }
+                }} style={{
+                  flex: isFirst ? 1 : 1.5, padding: "14px", borderRadius: 100,
+                  border: "none",
+                  background: `linear-gradient(135deg, ${slide.color}, ${slide.color}DD)`,
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                  color: "white", cursor: "pointer", fontWeight: 600,
+                  transition: "all 0.3s"
+                }}>
+                  {isLast ? "Let's Go! ☀️" : isFirst ? "Show Me Around" : "Next"}
+                </button>
+              </div>
+
+              {isFirst && (
+                <button onClick={() => {
+                  storage.set("shine-welcome-seen", JSON.stringify(true));
+                  setShowWelcome(false);
+                }} style={{
+                  marginTop: 12, padding: "8px", border: "none",
+                  background: "transparent", fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13, color: "#A8957F", cursor: "pointer"
+                }}>
+                  Skip — I'll explore on my own
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Upgrade Modal */}
       {showUpgrade && (
@@ -2612,7 +2749,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
       });
 
       const data = await response.json();
-
+      
       // If API returned fallback signal, use local reframe
       if (data.fallback) {
         const local = getLocalReframe(negativeThought);
@@ -2870,7 +3007,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
       });
 
       const data = await response.json();
-
+      
       if (data.fallback) {
         setLetter(getLocalLetter());
         setLoading(false);
@@ -3072,7 +3209,7 @@ Rules:
       });
 
       const data = await response.json();
-
+      
       if (data.fallback) {
         const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
         setMessages(prev => [...prev, { role: "coach", text: local, isLocal: true }]);
