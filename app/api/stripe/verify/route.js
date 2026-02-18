@@ -15,10 +15,6 @@ const PRO_TEST_EMAILS = (process.env.PRO_TEST_EMAILS || '')
     .filter(Boolean);
 
 export async function POST(request) {
-    if (!supabaseAdmin) {
-        return NextResponse.json({ error: 'Server not configured' }, { status: 500 });
-    }
-
     try {
         const { userId, email } = await request.json();
 
@@ -26,9 +22,13 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
         }
 
-        // Test user bypass — these emails always get Pro
+        // Test user bypass — these emails always get Pro (checked before Supabase)
         if (email && PRO_TEST_EMAILS.includes(email.toLowerCase())) {
             return NextResponse.json({ isPremium: true, stripeCustomerId: null, testUser: true });
+        }
+
+        if (!supabaseAdmin) {
+            return NextResponse.json({ error: 'Server not configured' }, { status: 500 });
         }
 
         const { data, error } = await supabaseAdmin
