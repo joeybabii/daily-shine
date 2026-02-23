@@ -275,7 +275,7 @@ function getDayOfYear() {
 
 function getDateKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function seededIndex(seed, arrayLength) {
@@ -325,6 +325,97 @@ export default function DailyShine({ user }) {
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeStep, setWelcomeStep] = useState(0);
+  const [activeTheme, setActiveTheme] = useState("warmPeach");
+
+  const THEMES = {
+    warmPeach: {
+      name: "Warm Peach", emoji: "☀️",
+      bg: "linear-gradient(160deg, #FFF8F0 0%, #FEF0E4 30%, #F5EBE0 60%, #EDE4DA 100%)",
+      cardBg: "rgba(255,255,255,0.65)", cardBorder: "rgba(212,165,116,0.15)",
+      text: "#3D3028", textMuted: "#8B7355", accent: "#E8976B", accentAlt: "#C4764A",
+      accentBg: "rgba(232,151,107,0.15)", accentBgSubtle: "rgba(232,151,107,0.08)",
+      moodBorder: "rgba(212,165,116,0.2)", moodBg: "rgba(255,255,255,0.5)", moodHover: "rgba(255,255,255,0.8)",
+      navBg: "rgba(255,248,240,0.9)", navBorder: "rgba(212,165,116,0.15)",
+      orb1: "rgba(232,151,107,0.12)", orb2: "rgba(196,168,130,0.1)",
+      dotColor1: "#D4A574", dotColor2: "#C4956A", dotColor3: "#B8886A",
+      tabActive: "#C4764A", tabInactive: "#8B7355",
+      syncBg: "rgba(130,180,130,0.1)", syncText: "#5A8A5A",
+      avatarBg: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+      avatarBorder: "#E8976B", avatarGradient: "linear-gradient(135deg, #E8976B, #D4764A)",
+      upgradeBg: "rgba(232,151,107,0.12)", signOutBorder: "rgba(200,100,100,0.2)", signOutText: "#A06050",
+      isDark: false,
+    },
+    arcticGlass: {
+      name: "Arctic Glass", emoji: "❄️",
+      bg: "linear-gradient(150deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
+      cardBg: "rgba(255,255,255,0.15)", cardBorder: "rgba(255,255,255,0.25)",
+      text: "#FFFFFF", textMuted: "rgba(255,255,255,0.6)", accent: "#FFFFFF", accentAlt: "rgba(255,255,255,0.85)",
+      accentBg: "rgba(255,255,255,0.2)", accentBgSubtle: "rgba(255,255,255,0.1)",
+      moodBorder: "rgba(255,255,255,0.25)", moodBg: "rgba(255,255,255,0.12)", moodHover: "rgba(255,255,255,0.25)",
+      navBg: "rgba(255,255,255,0.1)", navBorder: "rgba(255,255,255,0.15)",
+      orb1: "rgba(255,255,255,0.08)", orb2: "rgba(240,147,251,0.1)",
+      dotColor1: "rgba(255,255,255,0.15)", dotColor2: "rgba(255,255,255,0.1)", dotColor3: "rgba(255,255,255,0.08)",
+      tabActive: "#FFFFFF", tabInactive: "rgba(255,255,255,0.5)",
+      syncBg: "rgba(255,255,255,0.15)", syncText: "rgba(255,255,255,0.8)",
+      avatarBg: "rgba(255,255,255,0.15)", avatarBorder: "rgba(255,255,255,0.5)",
+      avatarGradient: "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))",
+      upgradeBg: "rgba(255,255,255,0.12)", signOutBorder: "rgba(255,255,255,0.2)", signOutText: "rgba(255,255,255,0.7)",
+      isDark: true,
+    },
+    neoGarden: {
+      name: "Neo Garden", emoji: "🌿",
+      bg: "linear-gradient(170deg, #E8F5E9 0%, #F1F8E9 30%, #FFF8E1 60%, #FFF3E0 100%)",
+      cardBg: "rgba(255,255,255,0.75)", cardBorder: "rgba(76,175,80,0.12)",
+      text: "#1B3409", textMuted: "#6B8F5B", accent: "#4CAF50", accentAlt: "#2E7D32",
+      accentBg: "rgba(76,175,80,0.12)", accentBgSubtle: "rgba(76,175,80,0.06)",
+      moodBorder: "rgba(76,175,80,0.2)", moodBg: "rgba(255,255,255,0.6)", moodHover: "rgba(255,255,255,0.85)",
+      navBg: "rgba(255,255,255,0.8)", navBorder: "rgba(76,175,80,0.08)",
+      orb1: "rgba(76,175,80,0.08)", orb2: "rgba(139,195,74,0.06)",
+      dotColor1: "#4CAF50", dotColor2: "#8BC34A", dotColor3: "#CDDC39",
+      tabActive: "#2E7D32", tabInactive: "#6B8F5B",
+      syncBg: "rgba(76,175,80,0.12)", syncText: "#2E7D32",
+      avatarBg: "rgba(76,175,80,0.1)", avatarBorder: "#4CAF50",
+      avatarGradient: "linear-gradient(135deg, #66BB6A, #26A69A)",
+      upgradeBg: "rgba(76,175,80,0.1)", signOutBorder: "rgba(200,100,100,0.15)", signOutText: "#A06050",
+      isDark: false,
+    },
+    noirFilm: {
+      name: "Noir Film", emoji: "🎬",
+      bg: "linear-gradient(180deg, #0D0D0D 0%, #1A1A1A 100%)",
+      cardBg: "rgba(255,255,255,0.03)", cardBorder: "rgba(255,255,255,0.06)",
+      text: "#D4D0C8", textMuted: "#5A5750", accent: "#D4A574", accentAlt: "#B8865A",
+      accentBg: "rgba(212,165,116,0.1)", accentBgSubtle: "rgba(212,165,116,0.06)",
+      moodBorder: "rgba(212,165,116,0.15)", moodBg: "rgba(255,255,255,0.04)", moodHover: "rgba(255,255,255,0.08)",
+      navBg: "rgba(13,13,13,0.95)", navBorder: "rgba(255,255,255,0.04)",
+      orb1: "rgba(212,165,116,0.06)", orb2: "rgba(180,140,100,0.04)",
+      dotColor1: "rgba(212,165,116,0.08)", dotColor2: "rgba(180,140,100,0.06)", dotColor3: "rgba(150,120,90,0.05)",
+      tabActive: "#D4A574", tabInactive: "#5A5750",
+      syncBg: "rgba(130,180,130,0.08)", syncText: "#7A9A6A",
+      avatarBg: "rgba(212,165,116,0.08)", avatarBorder: "#D4A574",
+      avatarGradient: "linear-gradient(135deg, #D4A574, #B8865A)",
+      upgradeBg: "rgba(212,165,116,0.08)", signOutBorder: "rgba(200,100,100,0.15)", signOutText: "#C07060",
+      isDark: true,
+    },
+    sunsetCoast: {
+      name: "Sunset Coast", emoji: "🌅",
+      bg: "linear-gradient(170deg, #1A1028 0%, #2D1B3D 20%, #4A2040 40%, #8B3A4A 60%, #D4764A 80%, #F0A050 100%)",
+      cardBg: "rgba(255,255,255,0.08)", cardBorder: "rgba(255,255,255,0.1)",
+      text: "#FFF0E0", textMuted: "rgba(255,240,224,0.5)", accent: "#FFB74D", accentAlt: "#FF8A65",
+      accentBg: "rgba(255,183,77,0.15)", accentBgSubtle: "rgba(255,183,77,0.08)",
+      moodBorder: "rgba(255,183,77,0.2)", moodBg: "rgba(255,255,255,0.06)", moodHover: "rgba(255,255,255,0.12)",
+      navBg: "rgba(26,16,40,0.8)", navBorder: "rgba(255,255,255,0.06)",
+      orb1: "rgba(255,160,80,0.08)", orb2: "rgba(200,100,120,0.06)",
+      dotColor1: "rgba(255,183,77,0.08)", dotColor2: "rgba(255,140,100,0.06)", dotColor3: "rgba(200,100,80,0.05)",
+      tabActive: "#FFB74D", tabInactive: "rgba(255,240,224,0.4)",
+      syncBg: "rgba(255,183,77,0.12)", syncText: "#FFB74D",
+      avatarBg: "rgba(255,183,77,0.1)", avatarBorder: "#FFB74D",
+      avatarGradient: "linear-gradient(135deg, #FFB74D, #FF8A65)",
+      upgradeBg: "rgba(255,183,77,0.1)", signOutBorder: "rgba(255,200,150,0.2)", signOutText: "rgba(255,200,150,0.7)",
+      isDark: true,
+    },
+  };
+
+  const th = THEMES[activeTheme] || THEMES.warmPeach;
 
   const FREE_AI_LIMIT = 3; // Free users get 3 AI uses per day
   const aiUsesLeft = isPremium ? Infinity : Math.max(0, FREE_AI_LIMIT - aiUsesToday);
@@ -362,44 +453,44 @@ export default function DailyShine({ user }) {
               await saveUserData(user.id, localData);
             }
           }
-        } catch { }
+        } catch {}
       }
 
       // Now load from localStorage (which has cloud data if synced)
       try {
         const moodRes = await storage.get("shine-moods");
         if (moodRes) setMoodHistory(JSON.parse(moodRes.value));
-      } catch { }
+      } catch {}
       try {
         const streakRes = await storage.get("shine-streak");
         if (streakRes) setStreak(JSON.parse(streakRes.value));
-      } catch { }
+      } catch {}
       try {
         const chalRes = await storage.get("shine-challenge-" + dateKey);
         if (chalRes) setChallengeCompleted(JSON.parse(chalRes.value));
-      } catch { }
+      } catch {}
       try {
         const gratRes = await storage.get("shine-gratitude-" + dateKey);
         if (gratRes) {
           setGratitudeText(JSON.parse(gratRes.value));
           setGratitudeSaved(true);
         }
-      } catch { }
+      } catch {}
       try {
         const journalRes = await storage.get("shine-journal");
         if (journalRes) setJournalEntries(JSON.parse(journalRes.value));
-      } catch { }
+      } catch {}
       try {
         const winsRes = await storage.get("shine-wins-" + dateKey);
         if (winsRes) {
           setWinsText(JSON.parse(winsRes.value));
           setWinsSaved(true);
         }
-      } catch { }
+      } catch {}
       try {
         const moodTodayRes = await storage.get("shine-mood-today-" + dateKey);
         if (moodTodayRes) setCurrentMood(JSON.parse(moodTodayRes.value));
-      } catch { }
+      } catch {}
       try {
         const eveRes = await storage.get("shine-evening-" + dateKey);
         if (eveRes) {
@@ -411,51 +502,37 @@ export default function DailyShine({ user }) {
           setEveningSaved(true);
           setEveningReflectionSaved(true);
         }
-      } catch { }
+      } catch {}
       try {
         const insightRes = await storage.get("shine-insight-" + dateKey);
         if (insightRes) setWeeklyInsight(JSON.parse(insightRes.value));
-      } catch { }
+      } catch {}
       try {
         const premRes = await storage.get("shine-premium");
         if (premRes) setIsPremium(JSON.parse(premRes.value));
-      } catch { }
+      } catch {}
       try {
         const stripeRes = await storage.get("shine-stripe-customer");
         if (stripeRes) setStripeCustomerId(JSON.parse(stripeRes.value));
-      } catch { }
+      } catch {}
       try {
         const usageRes = await storage.get("shine-ai-usage-" + dateKey);
         if (usageRes) setAiUsesToday(JSON.parse(usageRes.value));
-      } catch { }
-
-      // Server-side verification overrides localStorage for logged-in users
-      if (user?.id) {
-        try {
-          const verifyRes = await fetch('/api/stripe/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          });
-          const verifyData = await verifyRes.json();
-          setIsPremium(!!verifyData.isPremium);
-          storage.set("shine-premium", JSON.stringify(!!verifyData.isPremium));
-          if (verifyData.stripeCustomerId) {
-            setStripeCustomerId(verifyData.stripeCustomerId);
-            storage.set("shine-stripe-customer", JSON.stringify(verifyData.stripeCustomerId));
-          }
-        } catch { }
-      }
+      } catch {}
+      try {
+        const themeRes = await storage.get("shine-theme");
+        if (themeRes) setActiveTheme(JSON.parse(themeRes.value));
+      } catch {}
       setLoaded(true);
       setTimeout(() => setAnimateIn(true), 100);
-
-      // Show welcome guide for first-time users (use direct localStorage, not synced storage)
+      
+      // Show welcome guide for first-time users
       try {
-        const hasSeenWelcome = localStorage.getItem("shine-welcome-seen-local");
+        const hasSeenWelcome = await storage.get("shine-welcome-seen");
         if (!hasSeenWelcome) {
           setTimeout(() => setShowWelcome(true), 800);
         }
-      } catch { }
+      } catch {}
     };
     load();
   }, []);
@@ -464,13 +541,13 @@ export default function DailyShine({ user }) {
     setCurrentMood(mood);
     const newHistory = { ...moodHistory, [dateKey]: mood };
     setMoodHistory(newHistory);
-
+    
     // Calculate streak
     let s = 1;
     let d = new Date();
     d.setDate(d.getDate() - 1);
     while (true) {
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       if (newHistory[key] !== undefined) {
         s++;
         d.setDate(d.getDate() - 1);
@@ -482,7 +559,7 @@ export default function DailyShine({ user }) {
       await storage.set("shine-moods", JSON.stringify(newHistory));
       await storage.set("shine-streak", JSON.stringify(s));
       await storage.set("shine-mood-today-" + dateKey, JSON.stringify(mood));
-    } catch { }
+    } catch {}
   };
 
   const toggleChallenge = async () => {
@@ -490,7 +567,7 @@ export default function DailyShine({ user }) {
     setChallengeCompleted(newVal);
     try {
       await storage.set("shine-challenge-" + dateKey, JSON.stringify(newVal));
-    } catch { }
+    } catch {}
   };
 
   const saveGratitude = async () => {
@@ -501,7 +578,7 @@ export default function DailyShine({ user }) {
     try {
       await storage.set("shine-gratitude-" + dateKey, JSON.stringify(gratitudeText.trim()));
       await storage.set("shine-journal", JSON.stringify(entries));
-    } catch { }
+    } catch {}
   };
 
   const saveWins = async () => {
@@ -509,7 +586,7 @@ export default function DailyShine({ user }) {
     setWinsSaved(true);
     try {
       await storage.set("shine-wins-" + dateKey, JSON.stringify(winsText));
-    } catch { }
+    } catch {}
   };
 
   // Breathing exercise
@@ -552,7 +629,7 @@ export default function DailyShine({ user }) {
     for (let i = n - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       days.push({
@@ -594,32 +671,36 @@ export default function DailyShine({ user }) {
     };
     setEveningSaved(true);
     setEveningReflectionSaved(true);
-
+    
     // Also save to journal
-    const entries = {
-      ...journalEntries,
-      [dateKey]: {
+    const entries = { 
+      ...journalEntries, 
+      [dateKey]: { 
         ...(journalEntries[dateKey] || {}),
         gratitude: gratitudeText.trim(),
         wins: winsText,
         evening: eveData
-      }
+      } 
     };
     setJournalEntries(entries);
-
+    
     try {
       await storage.set("shine-evening-" + dateKey, JSON.stringify(eveData));
       await storage.set("shine-journal", JSON.stringify(entries));
-    } catch { }
+    } catch {}
   };
 
   const trackAIUse = async () => {
     const newCount = aiUsesToday + 1;
     setAiUsesToday(newCount);
-    try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch { }
+    try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch {}
   };
 
-
+  const togglePremium = async () => {
+    const newVal = !isPremium;
+    setIsPremium(newVal);
+    try { await storage.set("shine-premium", JSON.stringify(newVal)); } catch {}
+  };
 
   const handleUpgrade = async () => {
     if (!user) return;
@@ -660,29 +741,13 @@ export default function DailyShine({ user }) {
     }
   };
 
-  // Check for ?upgraded=true from Stripe redirect — verify with server
+  // Check for ?upgraded=true from Stripe redirect
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('upgraded') === 'true') {
-        // Verify actual payment status with server instead of blindly trusting URL param
-        if (user?.id) {
-          fetch('/api/stripe/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          })
-            .then(res => res.json())
-            .then(data => {
-              setIsPremium(!!data.isPremium);
-              storage.set("shine-premium", JSON.stringify(!!data.isPremium));
-              if (data.stripeCustomerId) {
-                setStripeCustomerId(data.stripeCustomerId);
-                storage.set("shine-stripe-customer", JSON.stringify(data.stripeCustomerId));
-              }
-            })
-            .catch(() => { });
-        }
+        setIsPremium(true);
+        storage.set("shine-premium", JSON.stringify(true));
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
@@ -695,7 +760,7 @@ export default function DailyShine({ user }) {
       .filter(d => d.mood)
       .map(d => `${d.label}: ${MOODS[d.mood - 1].label} (${d.mood}/5)`)
       .join(", ");
-
+    
     const recentEntries = Object.keys(journalEntries)
       .sort((a, b) => b.localeCompare(a))
       .slice(0, 5)
@@ -710,7 +775,7 @@ export default function DailyShine({ user }) {
       const moodDays = recentDays.filter(d => d.mood);
       const avg = moodDays.length > 0 ? moodDays.reduce((a, d) => a + d.mood, 0) / moodDays.length : 0;
       const entryCount = Object.keys(journalEntries).length;
-
+      
       if (moodDays.length === 0) return {
         emoji: "🌱", headline: "Your journey is just beginning",
         insight: "You haven't logged many moods yet, and that's totally okay — every garden starts with bare soil. The fact that you're here and exploring says something good about where you're headed.",
@@ -753,11 +818,11 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         })
       });
       const data = await response.json();
-
+      
       if (data.fallback) {
         const local = getLocalInsight();
         setWeeklyInsight(local);
-        try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch { }
+        try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
         setInsightLoading(false);
         return;
       }
@@ -766,11 +831,11 @@ Respond with ONLY a JSON object (no markdown, no backticks):
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       setWeeklyInsight(parsed);
-      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(parsed)); } catch { }
+      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(parsed)); } catch {}
     } catch {
       const local = getLocalInsight();
       setWeeklyInsight(local);
-      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch { }
+      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
     }
     setInsightLoading(false);
   };
@@ -793,7 +858,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
   const gardenStage = [...GARDEN_STAGES].reverse().find(s => totalSeeds >= s.minSeeds) || GARDEN_STAGES[0];
   const nextStage = GARDEN_STAGES[GARDEN_STAGES.indexOf(gardenStage) + 1];
-  const gardenProgress = nextStage
+  const gardenProgress = nextStage 
     ? (totalSeeds - gardenStage.minSeeds) / (nextStage.minSeeds - gardenStage.minSeeds)
     : 1;
 
@@ -802,7 +867,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(160deg, #FFF8F0 0%, #FEF0E4 30%, #F5EBE0 60%, #EDE4DA 100%)",
+      background: th.bg,
       fontFamily: "'Instrument Serif', 'Georgia', serif",
       position: "relative",
       overflow: "hidden"
@@ -810,21 +875,21 @@ Respond with ONLY a JSON object (no markdown, no backticks):
       {/* Background texture */}
       <div style={{
         position: "fixed", inset: 0, opacity: 0.03, pointerEvents: "none",
-        backgroundImage: `radial-gradient(circle at 20% 50%, #D4A574 1px, transparent 1px),
-                          radial-gradient(circle at 80% 20%, #C4956A 1px, transparent 1px),
-                          radial-gradient(circle at 60% 80%, #B8886A 1px, transparent 1px)`,
+        backgroundImage: `radial-gradient(circle at 20% 50%, ${th.dotColor1} 1px, transparent 1px),
+                          radial-gradient(circle at 80% 20%, ${th.dotColor2} 1px, transparent 1px),
+                          radial-gradient(circle at 60% 80%, ${th.dotColor3} 1px, transparent 1px)`,
         backgroundSize: "60px 60px, 80px 80px, 100px 100px"
       }} />
 
       {/* Floating orbs */}
       <div style={{
         position: "fixed", top: "-10%", right: "-5%", width: 400, height: 400,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(232,151,107,0.12) 0%, transparent 70%)",
+        borderRadius: "50%", background: `radial-gradient(circle, ${th.orb1} 0%, transparent 70%)`,
         pointerEvents: "none", animation: "float 20s ease-in-out infinite"
       }} />
       <div style={{
         position: "fixed", bottom: "-10%", left: "-10%", width: 500, height: 500,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(196,168,130,0.1) 0%, transparent 70%)",
+        borderRadius: "50%", background: `radial-gradient(circle, ${th.orb2} 0%, transparent 70%)`,
         pointerEvents: "none", animation: "float 25s ease-in-out infinite reverse"
       }} />
 
@@ -843,8 +908,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         }
         
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 20px rgba(232,151,107,0.15); }
-          50% { box-shadow: 0 0 40px rgba(232,151,107,0.3); }
+          0%, 100% { box-shadow: 0 0 20px ${th.accentBgSubtle}; }
+          50% { box-shadow: 0 0 40px ${th.accentBg}; }
         }
 
         @keyframes breathe {
@@ -867,9 +932,9 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         .card {
-          background: rgba(255,255,255,0.65);
+          background: ${th.cardBg};
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(212,165,116,0.15);
+          border: 1px solid ${th.cardBorder};
           border-radius: 24px;
           padding: 28px;
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -877,7 +942,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         
         .card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 40px rgba(180,140,100,0.1);
+          box-shadow: 0 12px 40px ${th.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(180,140,100,0.1)'};
         }
         
         .tab-btn {
@@ -889,7 +954,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           font-family: 'DM Sans', sans-serif;
           font-size: 11px;
           font-weight: 500;
-          color: #8B7355;
+          color: ${th.tabInactive};
           transition: all 0.3s;
           display: flex;
           flex-direction: column;
@@ -898,8 +963,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         }
         
         .tab-btn.active {
-          background: rgba(232,151,107,0.15);
-          color: #C4764A;
+          background: ${th.accentBg};
+          color: ${th.tabActive};
           font-weight: 600;
         }
         
@@ -907,8 +972,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           width: 56px;
           height: 56px;
           border-radius: 50%;
-          border: 2px solid rgba(212,165,116,0.2);
-          background: rgba(255,255,255,0.5);
+          border: 2px solid ${th.moodBorder};
+          background: ${th.moodBg};
           cursor: pointer;
           font-size: 26px;
           display: flex;
@@ -919,15 +984,15 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         
         .mood-btn:hover {
           transform: scale(1.15);
-          border-color: rgba(232,151,107,0.5);
-          background: rgba(255,255,255,0.8);
+          border-color: ${th.accent};
+          background: ${th.moodHover};
         }
         
         .mood-btn.selected {
-          border-color: #E8976B;
-          background: rgba(232,151,107,0.15);
+          border-color: ${th.accent};
+          background: ${th.accentBg};
           transform: scale(1.1);
-          box-shadow: 0 4px 20px rgba(232,151,107,0.25);
+          box-shadow: 0 4px 20px ${th.accentBgSubtle};
         }
       `}</style>
 
@@ -946,25 +1011,23 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           <button onClick={() => { setShowWelcome(true); setWelcomeStep(0); }} style={{
             position: "absolute", top: 30, right: 44,
             width: 32, height: 32, borderRadius: "50%",
-            border: "1px solid rgba(212,165,116,0.25)",
-            background: "rgba(255,255,255,0.5)",
+            border: `1px solid ${th.cardBorder}`,
+            background: th.isDark ? "rgba(255,255,255,0.05)" : th.moodBg,
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-            color: "#A8957F", fontWeight: 600,
-            transition: "all 0.3s"
+            color: th.textMuted, fontWeight: 600, transition: "all 0.3s"
           }}>
             ?
           </button>
-
           {/* Account button */}
           <button onClick={() => setActiveTab("account")} style={{
             position: "absolute", top: 30, right: 0,
             width: 36, height: 36, borderRadius: "50%",
-            border: user ? "2px solid #E8976B" : "1px solid rgba(212,165,116,0.3)",
-            background: user ? "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))" : "rgba(255,255,255,0.5)",
+            border: user ? `2px solid ${th.accent}` : `1px solid ${th.cardBorder}`,
+            background: user ? th.avatarBg : (th.isDark ? "rgba(255,255,255,0.05)" : th.moodBg),
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "'DM Sans', sans-serif", fontSize: user ? 14 : 16,
-            color: user ? "#C4764A" : "#A8957F", fontWeight: 600,
+            color: user ? th.accentAlt : th.textMuted, fontWeight: 600,
             transition: "all 0.3s"
           }}>
             {user ? (user.email?.[0]?.toUpperCase() || "U") : "👤"}
@@ -972,15 +1035,15 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 10,
-            background: "rgba(232,151,107,0.1)", padding: "8px 20px",
+            background: th.accentBgSubtle, padding: "8px 20px",
             borderRadius: 100, marginBottom: 16,
             fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-            color: "#C4764A", fontWeight: 500, letterSpacing: "0.5px"
+            color: th.accent, fontWeight: 500, letterSpacing: "0.5px"
           }}>
             ☀️ Daily Shine
             {streak > 0 && (
               <span style={{
-                background: "linear-gradient(135deg, #E8976B, #D4764A)",
+                background: `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`,
                 color: "white", padding: "3px 10px", borderRadius: 100,
                 fontSize: 12, fontWeight: 600,
                 animation: streak >= 3 ? "streakPulse 2s ease-in-out infinite" : "none"
@@ -990,14 +1053,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             )}
           </div>
           <h1 style={{
-            fontSize: 36, fontWeight: 400, color: "#3D3028",
+            fontSize: 36, fontWeight: 400, color: th.text,
             lineHeight: 1.2, marginBottom: 6
           }}>
             {greetingName()} ✨
           </h1>
           <p style={{
             fontFamily: "'DM Sans', sans-serif", fontSize: 15,
-            color: "#8B7355", fontWeight: 300
+            color: th.textMuted, fontWeight: 300
           }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
@@ -1010,13 +1073,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           {[currentMood !== null, challengeCompleted, gratitudeSaved].map((done, i) => (
             <div key={i} style={{
               width: done ? 28 : 8, height: 8, borderRadius: 100,
-              background: done ? "linear-gradient(90deg, #E8976B, #D4A574)" : "rgba(212,165,116,0.2)",
+              background: done ? `linear-gradient(90deg, ${th.accent}, ${th.accentAlt})` : th.accentBgSubtle,
               transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
             }} />
           ))}
           <span style={{
             fontFamily: "'DM Sans', sans-serif", fontSize: 12,
-            color: "#A8957F", marginLeft: 8
+            color: th.textMuted, marginLeft: 8
           }}>
             {completionCount}/3 today
           </span>
@@ -1028,19 +1091,19 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
             {/* Affirmation Card */}
             <div className="card" style={{
-              background: "linear-gradient(135deg, rgba(232,151,107,0.12) 0%, rgba(255,255,255,0.7) 100%)",
+              background: th.isDark ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg, rgba(232,151,107,0.12) 0%, rgba(255,255,255,0.7) 100%)",
               textAlign: "center", padding: "36px 32px",
               animation: "fadeUp 0.6s ease-out"
             }}>
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#C4764A", marginBottom: 16, fontWeight: 600
+                color: th.accent, marginBottom: 16, fontWeight: 600
               }}>
                 Today's Affirmation
               </div>
               <p style={{
-                fontSize: 22, lineHeight: 1.5, color: "#3D3028",
+                fontSize: 22, lineHeight: 1.5, color: th.text,
                 fontStyle: "italic", fontWeight: 400
               }}>
                 "{todayAffirmation}"
@@ -1052,7 +1115,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 20, fontWeight: 600
+                color: th.textMuted, marginBottom: 20, fontWeight: 600
               }}>
                 How are you feeling?
               </div>
@@ -1067,7 +1130,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     </button>
                     <div style={{
                       fontFamily: "'DM Sans', sans-serif", fontSize: 11,
-                      color: currentMood === mood.value ? "#C4764A" : "#A8957F",
+                      color: currentMood === mood.value ? th.accent : th.textMuted,
                       marginTop: 8, fontWeight: currentMood === mood.value ? 600 : 400,
                       transition: "all 0.3s"
                     }}>
@@ -1079,16 +1142,16 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {currentMood !== null && (
                 <div style={{
                   marginTop: 16, padding: "12px 16px",
-                  background: "rgba(232,151,107,0.08)", borderRadius: 16,
+                  background: th.accentBgSubtle, borderRadius: 16,
                   fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                  color: "#8B7355", textAlign: "center",
+                  color: th.textMuted, textAlign: "center",
                   animation: "fadeUp 0.4s ease-out"
                 }}>
-                  {currentMood <= 2
+                  {currentMood <= 2 
                     ? "It's okay to have tough days. Be extra gentle with yourself today. 💛"
-                    : currentMood === 3
-                      ? "Steady days matter too. You're doing just fine. 🌿"
-                      : "Love to see it! Let that good energy flow. ☀️"
+                    : currentMood === 3 
+                    ? "Steady days matter too. You're doing just fine. 🌿"
+                    : "Love to see it! Let that good energy flow. ☀️"
                   }
                 </div>
               )}
@@ -1107,13 +1170,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div style={{
                   fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                   textTransform: "uppercase", letterSpacing: 2,
-                  color: "#8B7355", fontWeight: 600
+                  color: th.textMuted, fontWeight: 600
                 }}>
                   Today's Challenge
                 </div>
                 <span style={{
                   fontFamily: "'DM Sans', sans-serif", fontSize: 11,
-                  background: "rgba(212,165,116,0.15)", padding: "4px 12px",
+                  background: th.cardBorder, padding: "4px 12px",
                   borderRadius: 100, color: "#A8886A", fontWeight: 500
                 }}>
                   {todayChallenge.category}
@@ -1122,7 +1185,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <button onClick={toggleChallenge} style={{
                   width: 36, height: 36, borderRadius: 12, flexShrink: 0,
-                  border: challengeCompleted ? "none" : "2px solid rgba(212,165,116,0.3)",
+                  border: challengeCompleted ? "none" : `2px solid ${th.cardBorder}`,
                   background: challengeCompleted ? "linear-gradient(135deg, #82B482, #6BA26B)" : "transparent",
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                   transition: "all 0.3s", color: "white", fontSize: 18
@@ -1149,12 +1212,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 16, fontWeight: 600
+                color: th.textMuted, marginBottom: 16, fontWeight: 600
               }}>
                 Gratitude Moment
               </div>
               <p style={{
-                fontSize: 17, color: "#3D3028", marginBottom: 16, lineHeight: 1.4,
+                fontSize: 17, color: th.text, marginBottom: 16, lineHeight: 1.4,
                 fontStyle: "italic"
               }}>
                 {todayGratitude}
@@ -1167,18 +1230,18 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     placeholder="Write your answer here..."
                     style={{
                       width: "100%", minHeight: 80, padding: 16,
-                      background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+                      background: th.moodBg, border: `1px solid ${th.cardBorder}`,
                       borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
                       fontSize: 14, color: "#4A3F35", resize: "vertical",
                       outline: "none", transition: "border-color 0.3s"
                     }}
-                    onFocus={e => e.target.style.borderColor = "rgba(232,151,107,0.4)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(212,165,116,0.2)"}
+                    onFocus={e => e.target.style.borderColor = `${th.accent}`}
+                    onBlur={e => e.target.style.borderColor = th.accentBgSubtle}
                   />
                   <button onClick={saveGratitude} style={{
                     marginTop: 12, padding: "10px 24px", borderRadius: 100,
-                    border: "none", background: gratitudeText.trim() ? "linear-gradient(135deg, #E8976B, #D4764A)" : "rgba(212,165,116,0.2)",
-                    color: gratitudeText.trim() ? "white" : "#A8957F",
+                    border: "none", background: gratitudeText.trim() ? `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})` : th.accentBgSubtle,
+                    color: gratitudeText.trim() ? "white" : th.textMuted,
                     fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
                     cursor: gratitudeText.trim() ? "pointer" : "default",
                     transition: "all 0.3s"
@@ -1206,17 +1269,17 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: showQuote ? 16 : 0, fontWeight: 600,
+                color: th.textMuted, marginBottom: showQuote ? 16 : 0, fontWeight: 600,
                 transition: "margin 0.3s"
               }}>
                 {showQuote ? "Quote of the Day" : "Tap for today's quote ✦"}
               </div>
               {showQuote && (
                 <div style={{ animation: "fadeUp 0.4s ease-out" }}>
-                  <p style={{ fontSize: 18, color: "#3D3028", fontStyle: "italic", lineHeight: 1.5, marginBottom: 12 }}>
+                  <p style={{ fontSize: 18, color: th.text, fontStyle: "italic", lineHeight: 1.5, marginBottom: 12 }}>
                     "{todayQuote.text}"
                   </p>
-                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#A8957F" }}>
+                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: th.textMuted }}>
                     — {todayQuote.author}
                   </p>
                 </div>
@@ -1235,7 +1298,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 24, fontWeight: 600
+                color: th.textMuted, marginBottom: 24, fontWeight: 600
               }}>
                 Box Breathing
               </div>
@@ -1243,8 +1306,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 width: 140, height: 140, borderRadius: "50%",
                 margin: "0 auto 24px",
                 background: breathingActive
-                  ? "radial-gradient(circle, rgba(232,151,107,0.3) 0%, rgba(232,151,107,0.05) 70%)"
-                  : "radial-gradient(circle, rgba(212,165,116,0.15) 0%, rgba(212,165,116,0.03) 70%)",
+                  ? `radial-gradient(circle, ${th.accent}4D 0%, ${th.accent}0D 70%)`
+                  : `radial-gradient(circle, ${th.accentBgSubtle} 0%, transparent 70%)`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.5s",
                 animation: breathingActive ? "breathe 4s ease-in-out infinite" : "none"
@@ -1252,14 +1315,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div style={{
                   width: 80, height: 80, borderRadius: "50%",
                   background: breathingActive
-                    ? "linear-gradient(135deg, #E8976B, #D4A574)"
-                    : "rgba(212,165,116,0.2)",
+                    ? `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`
+                    : th.accentBgSubtle,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   transition: "all 0.5s"
                 }}>
                   <span style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                    color: breathingActive ? "white" : "#8B7355", fontWeight: 500
+                    color: breathingActive ? "white" : th.textMuted, fontWeight: 500
                   }}>
                     {breathingActive ? breathCount + "/4" : "🌬️"}
                   </span>
@@ -1267,7 +1330,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               </div>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 18,
-                color: "#3D3028", marginBottom: 20, minHeight: 28, fontWeight: 300
+                color: th.text, marginBottom: 20, minHeight: 28, fontWeight: 300
               }}>
                 {breathPhase === "idle" ? "4 seconds in, 4 hold, 4 out, 4 hold" : breathPhase}
               </p>
@@ -1284,8 +1347,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 padding: "12px 32px", borderRadius: 100, border: "none",
                 background: breathingActive
                   ? "rgba(139,115,85,0.15)"
-                  : "linear-gradient(135deg, #E8976B, #D4764A)",
-                color: breathingActive ? "#8B7355" : "white",
+                  : `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`,
+                color: breathingActive ? th.textMuted : "white",
                 fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 500,
                 cursor: "pointer", transition: "all 0.3s"
               }}>
@@ -1298,13 +1361,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 20, fontWeight: 600
+                color: th.textMuted, marginBottom: 20, fontWeight: 600
               }}>
                 3 Wins Today
               </div>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                color: "#A8957F", marginBottom: 16
+                color: th.textMuted, marginBottom: 16
               }}>
                 Even small victories count. What went right?
               </p>
@@ -1314,10 +1377,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                       <span style={{
                         width: 28, height: 28, borderRadius: "50%",
-                        background: "rgba(232,151,107,0.12)",
+                        background: th.accentBg,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                        color: "#C4764A", fontWeight: 600, flexShrink: 0
+                        color: th.accent, fontWeight: 600, flexShrink: 0
                       }}>
                         {i + 1}
                       </span>
@@ -1332,8 +1395,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                         placeholder={["First win...", "Second win...", "Third win..."][i]}
                         style={{
                           flex: 1, padding: "10px 14px",
-                          background: "rgba(255,255,255,0.5)",
-                          border: "1px solid rgba(212,165,116,0.2)",
+                          background: th.moodBg,
+                          border: `1px solid ${th.cardBorder}`,
                           borderRadius: 12, fontFamily: "'DM Sans', sans-serif",
                           fontSize: 14, color: "#4A3F35", outline: "none"
                         }}
@@ -1344,8 +1407,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     marginTop: 8, padding: "10px 24px", borderRadius: 100,
                     border: "none",
                     background: winsText.some(w => w.trim())
-                      ? "linear-gradient(135deg, #E8976B, #D4764A)" : "rgba(212,165,116,0.2)",
-                    color: winsText.some(w => w.trim()) ? "white" : "#A8957F",
+                      ? `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})` : th.accentBgSubtle,
+                    color: winsText.some(w => w.trim()) ? "white" : th.textMuted,
                     fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
                     cursor: winsText.some(w => w.trim()) ? "pointer" : "default"
                   }}>
@@ -1387,10 +1450,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         {activeTab === "learn" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ textAlign: "center", padding: "10px 0 0", animation: "fadeUp 0.5s ease-out" }}>
-              <h2 style={{ fontSize: 26, color: "#3D3028", fontWeight: 400, marginBottom: 6 }}>
+              <h2 style={{ fontSize: 26, color: th.text, fontWeight: 400, marginBottom: 6 }}>
                 Positivity Library
               </h2>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#A8957F" }}>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: th.textMuted }}>
                 Short guides to help you grow, one topic at a time.
               </p>
             </div>
@@ -1403,8 +1466,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {GUIDE_CATEGORIES.map(cat => (
                 <button key={cat.id} onClick={() => { setLearnCategory(cat.id); setExpandedGuide(null); }} style={{
                   padding: "8px 14px", borderRadius: 100, border: "none", whiteSpace: "nowrap",
-                  background: learnCategory === cat.id ? "rgba(232,151,107,0.15)" : "rgba(255,255,255,0.5)",
-                  color: learnCategory === cat.id ? "#C4764A" : "#8B7355",
+                  background: learnCategory === cat.id ? th.accentBg : th.moodBg,
+                  color: learnCategory === cat.id ? th.accent : th.textMuted,
                   fontFamily: "'DM Sans', sans-serif", fontSize: 12,
                   fontWeight: learnCategory === cat.id ? 600 : 400,
                   cursor: "pointer", transition: "all 0.2s", flexShrink: 0
@@ -1423,14 +1486,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   <div key={guide.id} className="card" style={{
                     animation: `fadeUp ${0.5 + i * 0.08}s ease-out`,
                     cursor: "pointer", padding: isOpen ? 28 : 22,
-                    background: isOpen ? "rgba(255,255,255,0.8)" : undefined
+                    background: isOpen ? th.moodHover : undefined
                   }} onClick={() => setExpandedGuide(isOpen ? null : guide.id)}>
-
+                    
                     {/* Header */}
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{
                         width: 48, height: 48, borderRadius: 16,
-                        background: "rgba(232,151,107,0.1)",
+                        background: th.accentBgSubtle,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 24, flexShrink: 0
                       }}>
@@ -1439,20 +1502,20 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                       <div style={{ flex: 1 }}>
                         <h3 style={{
                           fontFamily: "'Instrument Serif', Georgia, serif",
-                          fontSize: 18, color: "#3D3028", fontWeight: 400, marginBottom: 4
+                          fontSize: 18, color: th.text, fontWeight: 400, marginBottom: 4
                         }}>
                           {guide.title}
                         </h3>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <span style={{
                             fontFamily: "'DM Sans', sans-serif", fontSize: 11,
-                            color: "#A8957F"
+                            color: th.textMuted
                           }}>
                             ⏱ {guide.time}
                           </span>
                           <span style={{
                             fontFamily: "'DM Sans', sans-serif", fontSize: 10,
-                            background: "rgba(212,165,116,0.12)", padding: "3px 8px",
+                            background: th.accentBg, padding: "3px 8px",
                             borderRadius: 100, color: "#A8886A", fontWeight: 500
                           }}>
                             {guide.category}
@@ -1469,7 +1532,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     {!isOpen && (
                       <p style={{
                         fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                        color: "#A8957F", marginTop: 10, lineHeight: 1.4
+                        color: th.textMuted, marginTop: 10, lineHeight: 1.4
                       }}>
                         {guide.preview}
                       </p>
@@ -1479,7 +1542,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     {isOpen && (
                       <div style={{
                         marginTop: 20, paddingTop: 20,
-                        borderTop: "1px solid rgba(212,165,116,0.1)",
+                        borderTop: `1px solid ${th.cardBorder}`,
                         animation: "fadeUp 0.4s ease-out"
                       }} onClick={e => e.stopPropagation()}>
                         {guide.content.map((block, j) => {
@@ -1495,17 +1558,17 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                             }}>
                               <div style={{
                                 width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                                background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+                                background: `linear-gradient(135deg, ${th.accentBg}, ${th.accentBgSubtle})`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                                color: "#C4764A", fontWeight: 700
+                                color: th.accent, fontWeight: 700
                               }}>
                                 {block.num}
                               </div>
                               <div>
                                 <h4 style={{
                                   fontFamily: "'DM Sans', sans-serif", fontSize: 15,
-                                  color: "#3D3028", fontWeight: 600, marginBottom: 4
+                                  color: th.text, fontWeight: 600, marginBottom: 4
                                 }}>{block.title}</h4>
                                 <p style={{
                                   fontFamily: "'DM Sans', sans-serif", fontSize: 14,
@@ -1523,7 +1586,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                             }}>
                               <p style={{
                                 fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                                color: "#5A8A5A", lineHeight: 1.5
+                                color: th.syncText, lineHeight: 1.5
                               }}>
                                 💡 <strong>Remember:</strong> {block.text}
                               </p>
@@ -1542,7 +1605,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         {/* ===== EVENING TAB ===== */}
         {activeTab === "evening" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
+            
             {/* Evening Header */}
             <div className="card" style={{
               textAlign: "center", animation: "fadeUp 0.5s ease-out",
@@ -1550,12 +1613,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>🌙</div>
               <h2 style={{
-                fontSize: 24, color: "#3D3028", fontWeight: 400, marginBottom: 6
+                fontSize: 24, color: th.text, fontWeight: 400, marginBottom: 6
               }}>
                 Evening Wind-Down
               </h2>
               <p style={{
-                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#A8957F"
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: th.textMuted
               }}>
                 Take a few quiet minutes to close out your day.
               </p>
@@ -1566,21 +1629,21 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 20, fontWeight: 600
+                color: th.textMuted, marginBottom: 20, fontWeight: 600
               }}>
                 Rate Your Day
               </div>
               <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                {[1,2,3,4,5,6,7,8,9,10].map(n => (
                   <button key={n} onClick={() => !eveningSaved && setEveningRating(n)} style={{
                     width: 36, height: 36, borderRadius: 10,
-                    border: eveningRating === n ? "2px solid #9B7DC8" : "1px solid rgba(212,165,116,0.2)",
-                    background: eveningRating !== null && n <= eveningRating
-                      ? `rgba(155,125,200,${0.1 + (n / 10) * 0.3})`
-                      : "rgba(255,255,255,0.5)",
+                    border: eveningRating === n ? "2px solid #9B7DC8" : `1px solid ${th.cardBorder}`,
+                    background: eveningRating !== null && n <= eveningRating 
+                      ? `rgba(155,125,200,${0.1 + (n/10) * 0.3})`
+                      : th.moodBg,
                     cursor: eveningSaved ? "default" : "pointer",
                     fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                    color: eveningRating !== null && n <= eveningRating ? "#6B4A8A" : "#A8957F",
+                    color: eveningRating !== null && n <= eveningRating ? th.accent : th.textMuted,
                     fontWeight: eveningRating === n ? 700 : 400,
                     transition: "all 0.2s"
                   }}>
@@ -1594,10 +1657,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   fontFamily: "'DM Sans', sans-serif", fontSize: 13,
                   color: "#9B7DC8", animation: "fadeUp 0.3s ease-out"
                 }}>
-                  {eveningRating <= 3 ? "Tough day. Tomorrow is a clean slate. 💜"
-                    : eveningRating <= 6 ? "A solid day. Not every day has to be a 10. 🌿"
-                      : eveningRating <= 8 ? "Good day! Hold onto that energy. ✨"
-                        : "What a great day! You earned that. 🌟"}
+                  {eveningRating <= 3 ? "Tough day. Tomorrow is a clean slate. 💜" 
+                   : eveningRating <= 6 ? "A solid day. Not every day has to be a 10. 🌿"
+                   : eveningRating <= 8 ? "Good day! Hold onto that energy. ✨"
+                   : "What a great day! You earned that. 🌟"}
                 </p>
               )}
             </div>
@@ -1607,13 +1670,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 16, fontWeight: 600
+                color: th.textMuted, marginBottom: 16, fontWeight: 600
               }}>
                 Reflect on Today
               </div>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                color: "#A8957F", marginBottom: 14, fontStyle: "italic"
+                color: th.textMuted, marginBottom: 14, fontStyle: "italic"
               }}>
                 What's one thing you learned about yourself today?
               </p>
@@ -1624,7 +1687,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   placeholder="Take a moment to reflect..."
                   style={{
                     width: "100%", minHeight: 80, padding: 16,
-                    background: "rgba(255,255,255,0.5)", border: "1px solid rgba(155,125,200,0.2)",
+                    background: th.moodBg, border: "1px solid rgba(155,125,200,0.2)",
                     borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
                     fontSize: 14, color: "#4A3F35", resize: "vertical", outline: "none"
                   }}
@@ -1645,13 +1708,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 16, fontWeight: 600
+                color: th.textMuted, marginBottom: 16, fontWeight: 600
               }}>
                 🎈 Let It Go
               </div>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                color: "#A8957F", marginBottom: 14
+                color: th.textMuted, marginBottom: 14
               }}>
                 Write something you want to release from today. Let it float away.
               </p>
@@ -1662,7 +1725,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   placeholder="What are you ready to let go of?"
                   style={{
                     width: "100%", minHeight: 60, padding: 16,
-                    background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+                    background: th.moodBg, border: `1px solid ${th.cardBorder}`,
                     borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
                     fontSize: 14, color: "#4A3F35", resize: "vertical", outline: "none"
                   }}
@@ -1683,13 +1746,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 16, fontWeight: 600
+                color: th.textMuted, marginBottom: 16, fontWeight: 600
               }}>
                 Tomorrow's Intention
               </div>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                color: "#A8957F", marginBottom: 14
+                color: th.textMuted, marginBottom: 14
               }}>
                 Set one gentle intention for tomorrow.
               </p>
@@ -1701,16 +1764,16 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   placeholder="e.g., I will be patient with myself"
                   style={{
                     width: "100%", padding: "12px 16px",
-                    background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+                    background: th.moodBg, border: `1px solid ${th.cardBorder}`,
                     borderRadius: 14, fontFamily: "'DM Sans', sans-serif",
                     fontSize: 14, color: "#4A3F35", outline: "none"
                   }}
                 />
               ) : (
                 <div style={{
-                  padding: 16, background: "rgba(232,151,107,0.08)",
+                  padding: 16, background: th.accentBgSubtle,
                   borderRadius: 16, fontFamily: "'Instrument Serif', Georgia, serif",
-                  fontSize: 17, color: "#C4764A", fontStyle: "italic", textAlign: "center"
+                  fontSize: 17, color: th.accent, fontStyle: "italic", textAlign: "center"
                 }}>
                   ✨ {tomorrowIntention || "Rest well, tomorrow is waiting."}
                 </div>
@@ -1723,8 +1786,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 padding: "16px 32px", borderRadius: 100, border: "none",
                 background: (eveningRating || eveningReflection.trim())
                   ? "linear-gradient(135deg, #9B7DC8, #7B5DA8)"
-                  : "rgba(212,165,116,0.2)",
-                color: (eveningRating || eveningReflection.trim()) ? "white" : "#A8957F",
+                  : th.accentBgSubtle,
+                color: (eveningRating || eveningReflection.trim()) ? "white" : th.textMuted,
                 fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 500,
                 cursor: (eveningRating || eveningReflection.trim()) ? "pointer" : "default",
                 transition: "all 0.3s", width: "100%",
@@ -1741,7 +1804,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>🌟</div>
                 <p style={{
-                  fontSize: 20, color: "#3D3028", fontStyle: "italic", lineHeight: 1.4
+                  fontSize: 20, color: th.text, fontStyle: "italic", lineHeight: 1.4
                 }}>
                   Your day is complete. Sleep well — you did enough today.
                 </p>
@@ -1763,7 +1826,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#5A8A5A", marginBottom: 16, fontWeight: 600
+                color: th.syncText, marginBottom: 16, fontWeight: 600
               }}>
                 🌱 Your Positivity Garden
               </div>
@@ -1779,7 +1842,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   background: "linear-gradient(180deg, #C8B896 0%, #B8A880 100%)",
                   borderRadius: "50% 50% 0 0"
                 }} />
-
+                
                 {/* Plants based on seeds */}
                 <div style={{
                   position: "relative", zIndex: 1, display: "flex",
@@ -1813,7 +1876,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{ fontSize: 28, marginBottom: 6 }}>{gardenStage.emoji}</div>
               <h3 style={{
                 fontFamily: "'Instrument Serif', Georgia, serif",
-                fontSize: 22, color: "#3D3028", fontWeight: 400, marginBottom: 4
+                fontSize: 22, color: th.text, fontWeight: 400, marginBottom: 4
               }}>
                 {gardenStage.name}
               </h3>
@@ -1840,7 +1903,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     }} />
                   </div>
                   <p style={{
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#A8957F"
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: th.textMuted
                   }}>
                     {totalSeeds} seeds planted · {nextStage.minSeeds - totalSeeds} more to reach {nextStage.emoji} {nextStage.name}
                   </p>
@@ -1849,7 +1912,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {!nextStage && (
                 <p style={{
                   fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                  color: "#5A8A5A", fontWeight: 500
+                  color: th.syncText, fontWeight: 500
                 }}>
                   🎉 Maximum bloom! {totalSeeds} seeds planted. You've built a paradise!
                 </p>
@@ -1858,9 +1921,9 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {/* Seed breakdown */}
               <div style={{
                 marginTop: 16, padding: "12px 16px",
-                background: "rgba(255,255,255,0.5)", borderRadius: 14,
+                background: th.moodBg, borderRadius: 14,
                 display: "flex", justifyContent: "space-around",
-                fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#8B7355"
+                fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: th.textMuted
               }}>
                 <span>🌤 Moods: {Object.keys(moodHistory).length}</span>
                 <span>📝 Journals: {Object.keys(journalEntries).length * 2}</span>
@@ -1877,7 +1940,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div style={{
                   fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                   textTransform: "uppercase", letterSpacing: 2,
-                  color: "#8B7355", fontWeight: 600
+                  color: th.textMuted, fontWeight: 600
                 }}>
                   Mood Trend
                 </div>
@@ -1885,8 +1948,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   {[7, 14, 30].map(range => (
                     <button key={range} onClick={() => setMoodViewRange(range)} style={{
                       padding: "4px 12px", borderRadius: 100, border: "none",
-                      background: moodViewRange === range ? "rgba(232,151,107,0.15)" : "transparent",
-                      color: moodViewRange === range ? "#C4764A" : "#A8957F",
+                      background: moodViewRange === range ? th.accentBg : "transparent",
+                      color: moodViewRange === range ? th.accent : th.textMuted,
                       fontFamily: "'DM Sans', sans-serif", fontSize: 11,
                       fontWeight: moodViewRange === range ? 600 : 400,
                       cursor: "pointer", transition: "all 0.2s"
@@ -1900,14 +1963,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {/* Mood Line Graph */}
               <div style={{ position: "relative", height: 140, marginBottom: 8 }}>
                 {/* Grid lines */}
-                {[1, 2, 3, 4, 5].map(level => (
+                {[1,2,3,4,5].map(level => (
                   <div key={level} style={{
                     position: "absolute", left: 0, right: 0,
                     bottom: `${(level - 1) * 25}%`, height: 1,
-                    background: "rgba(212,165,116,0.1)"
+                    background: th.accentBgSubtle
                   }} />
                 ))}
-
+                
                 {/* SVG Line */}
                 <svg width="100%" height="100%" viewBox={`0 0 ${moodViewRange * 20} 140`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
                   {(() => {
@@ -1915,24 +1978,24 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     const points = days
                       .map((d, i) => d.mood ? { x: i * (moodViewRange * 20 / (moodViewRange - 1)), y: 140 - ((d.mood - 1) / 4) * 120 - 10 } : null)
                       .filter(Boolean);
-
+                    
                     if (points.length < 2) return null;
-
+                    
                     const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-                    const areaData = pathData + ` L ${points[points.length - 1].x} 140 L ${points[0].x} 140 Z`;
-
+                    const areaData = pathData + ` L ${points[points.length-1].x} 140 L ${points[0].x} 140 Z`;
+                    
                     return (
                       <>
                         <defs>
                           <linearGradient id="moodGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#E8976B" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#E8976B" stopOpacity="0" />
+                            <stop offset="0%" stopColor={th.accent} stopOpacity="0.2" />
+                            <stop offset="100%" stopColor={th.accent} stopOpacity="0" />
                           </linearGradient>
                         </defs>
                         <path d={areaData} fill="url(#moodGrad)" />
-                        <path d={pathData} fill="none" stroke="#E8976B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={pathData} fill="none" stroke={th.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         {points.map((p, i) => (
-                          <circle key={i} cx={p.x} cy={p.y} r="4" fill="white" stroke="#E8976B" strokeWidth="2" />
+                          <circle key={i} cx={p.x} cy={p.y} r="4" fill="white" stroke={th.accent} strokeWidth="2" />
                         ))}
                       </>
                     );
@@ -1958,12 +2021,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {getAverageMood(moodViewRange) && (
                 <div style={{
                   marginTop: 14, padding: "10px 16px",
-                  background: "rgba(232,151,107,0.06)", borderRadius: 12,
+                  background: th.accentBgSubtle, borderRadius: 12,
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                   fontFamily: "'DM Sans', sans-serif", fontSize: 13
                 }}>
-                  <span style={{ color: "#A8957F" }}>Average mood ({moodViewRange} days)</span>
-                  <span style={{ color: "#C4764A", fontWeight: 600 }}>
+                  <span style={{ color: th.textMuted }}>Average mood ({moodViewRange} days)</span>
+                  <span style={{ color: th.accent, fontWeight: 600 }}>
                     {getAverageMood(moodViewRange)} / 5 {MOODS[Math.round(getAverageMood(moodViewRange)) - 1]?.emoji}
                   </span>
                 </div>
@@ -1979,7 +2042,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div style={{
                   fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                   textTransform: "uppercase", letterSpacing: 2,
-                  color: "#8B7355", fontWeight: 600
+                  color: th.textMuted, fontWeight: 600
                 }}>
                   🧠 Weekly Insight
                 </div>
@@ -1987,7 +2050,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   fontFamily: "'DM Sans', sans-serif", fontSize: 10,
                   background: "linear-gradient(135deg, rgba(107,162,107,0.15), rgba(107,162,107,0.05))",
                   padding: "4px 10px", borderRadius: 100,
-                  color: "#5A8A5A", fontWeight: 600
+                  color: th.syncText, fontWeight: 600
                 }}>
                   AI-POWERED
                 </span>
@@ -2001,7 +2064,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     <span style={{ fontSize: 36 }}>{weeklyInsight.emoji}</span>
                     <h3 style={{
                       fontFamily: "'Instrument Serif', Georgia, serif",
-                      fontSize: 20, color: "#3D3028", fontWeight: 400
+                      fontSize: 20, color: th.text, fontWeight: 400
                     }}>
                       {weeklyInsight.headline}
                     </h3>
@@ -2015,7 +2078,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                   <div style={{
                     padding: "12px 16px", background: "rgba(107,162,107,0.08)",
                     borderRadius: 14, fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 13, color: "#5A8A5A"
+                    fontSize: 13, color: th.syncText
                   }}>
                     💡 <strong>Next week:</strong> {weeklyInsight.suggestion}
                   </div>
@@ -2032,14 +2095,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div style={{ textAlign: "center" }}>
                   <p style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                    color: "#A8957F", marginBottom: 16
+                    color: th.textMuted, marginBottom: 16
                   }}>
                     Get a personalized analysis of your mood patterns and journal entries.
                   </p>
                   <button onClick={generateInsight} disabled={insightLoading} style={{
                     padding: "12px 28px", borderRadius: 100, border: "none",
-                    background: insightLoading ? "rgba(212,165,116,0.2)" : "linear-gradient(135deg, #6BA26B, #5A8A5A)",
-                    color: insightLoading ? "#A8957F" : "white",
+                    background: insightLoading ? th.accentBgSubtle : "linear-gradient(135deg, #6BA26B, #5A8A5A)",
+                    color: insightLoading ? th.textMuted : "white",
                     fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
                     cursor: insightLoading ? "default" : "pointer"
                   }}>
@@ -2063,13 +2126,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 20, fontWeight: 600
+                color: th.textMuted, marginBottom: 20, fontWeight: 600
               }}>
                 Your Stats
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 {[
-                  { label: "Current Streak", value: `${streak} day${streak !== 1 ? 's' : ''}`, icon: "🔥", color: "#E8976B" },
+                  { label: "Current Streak", value: `${streak} day${streak !== 1 ? 's' : ''}`, icon: "🔥", color: th.accent },
                   { label: "Moods Logged", value: Object.keys(moodHistory).length, icon: "📊", color: "#6BA2E8" },
                   { label: "Journal Entries", value: Object.keys(journalEntries).length, icon: "📝", color: "#9B7DC8" },
                   { label: "Today's Challenge", value: challengeCompleted ? "Done!" : "Pending", icon: "⚡", color: "#6BA26B" },
@@ -2083,12 +2146,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
                     <div style={{
                       fontFamily: "'DM Sans', sans-serif", fontSize: 20,
-                      color: "#3D3028", fontWeight: 600, marginBottom: 2
+                      color: th.text, fontWeight: 600, marginBottom: 2
                     }}>
                       {stat.value}
                     </div>
                     <div style={{
-                      fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#A8957F"
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: th.textMuted
                     }}>
                       {stat.label}
                     </div>
@@ -2102,14 +2165,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 20, fontWeight: 600
+                color: th.textMuted, marginBottom: 20, fontWeight: 600
               }}>
                 Journal History
               </div>
               {getJournalDays().length === 0 ? (
                 <p style={{
                   fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                  color: "#A8957F", textAlign: "center", padding: "20px 0"
+                  color: th.textMuted, textAlign: "center", padding: "20px 0"
                 }}>
                   Your journal entries will appear here. Start by writing a gratitude or evening reflection!
                 </p>
@@ -2119,12 +2182,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     const isExpanded = journalViewExpanded === entry.key;
                     const moodForDay = moodHistory[entry.key];
                     return (
-                      <div key={i}
+                      <div key={i} 
                         onClick={() => setJournalViewExpanded(isExpanded ? null : entry.key)}
                         style={{
                           padding: "14px 18px", borderRadius: 16,
-                          background: isExpanded ? "rgba(232,151,107,0.06)" : "rgba(255,255,255,0.4)",
-                          border: "1px solid rgba(212,165,116,0.1)",
+                          background: isExpanded ? th.accentBgSubtle : th.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.4)",
+                          border: `1px solid ${th.cardBorder}`,
                           cursor: "pointer", transition: "all 0.3s"
                         }}
                       >
@@ -2138,14 +2201,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                             <div>
                               <div style={{
                                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                                color: "#3D3028", fontWeight: 500
+                                color: th.text, fontWeight: 500
                               }}>
                                 {entry.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                               </div>
                               {!isExpanded && entry.gratitude && (
                                 <div style={{
                                   fontFamily: "'DM Sans', sans-serif", fontSize: 12,
-                                  color: "#A8957F", marginTop: 2,
+                                  color: th.textMuted, marginTop: 2,
                                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                                   maxWidth: 220
                                 }}>
@@ -2166,14 +2229,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                         {isExpanded && (
                           <div style={{
                             marginTop: 14, paddingTop: 14,
-                            borderTop: "1px solid rgba(212,165,116,0.1)",
+                            borderTop: `1px solid ${th.cardBorder}`,
                             animation: "fadeUp 0.3s ease-out"
                           }}>
                             {entry.gratitude && (
                               <div style={{ marginBottom: 12 }}>
                                 <div style={{
                                   fontFamily: "'DM Sans', sans-serif", fontSize: 11,
-                                  color: "#C4764A", fontWeight: 600, marginBottom: 4,
+                                  color: th.accent, fontWeight: 600, marginBottom: 4,
                                   textTransform: "uppercase", letterSpacing: 1
                                 }}>Gratitude</div>
                                 <p style={{
@@ -2186,7 +2249,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                               <div style={{ marginBottom: 12 }}>
                                 <div style={{
                                   fontFamily: "'DM Sans', sans-serif", fontSize: 11,
-                                  color: "#C4764A", fontWeight: 600, marginBottom: 4,
+                                  color: th.accent, fontWeight: 600, marginBottom: 4,
                                   textTransform: "uppercase", letterSpacing: 1
                                 }}>Wins</div>
                                 {entry.wins.filter(w => w && w.trim()).map((w, j) => (
@@ -2237,15 +2300,15 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               background: "linear-gradient(135deg, rgba(196,168,130,0.1), rgba(255,255,255,0.7))"
             }}>
               <p style={{
-                fontSize: 18, color: "#3D3028", fontStyle: "italic", lineHeight: 1.5
+                fontSize: 18, color: th.text, fontStyle: "italic", lineHeight: 1.5
               }}>
-                {streak === 0
+                {streak === 0 
                   ? "Every journey starts with a single step. Log your mood to begin your streak!"
-                  : streak < 3
-                    ? "You're building something beautiful. Keep showing up for yourself."
-                    : streak < 7
-                      ? `${streak} days of choosing positivity. You're on fire! 🔥`
-                      : `${streak} days strong. You're proof that consistency changes everything. 🌟`
+                  : streak < 3 
+                  ? "You're building something beautiful. Keep showing up for yourself."
+                  : streak < 7
+                  ? `${streak} days of choosing positivity. You're on fire! 🔥`
+                  : `${streak} days strong. You're proof that consistency changes everything. 🌟`
                 }
               </p>
             </div>
@@ -2257,11 +2320,11 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div className="card" style={{
               textAlign: "center", animation: "fadeUp 0.5s ease-out",
-              background: "linear-gradient(135deg, rgba(232,151,107,0.08), rgba(255,255,255,0.7))"
+              background: th.isDark ? "rgba(255,255,255,0.03)" : "linear-gradient(135deg, rgba(232,151,107,0.08), rgba(255,255,255,0.7))"
             }}>
               <div style={{
                 width: 72, height: 72, borderRadius: "50%", margin: "0 auto 16px",
-                background: user ? "linear-gradient(135deg, #E8976B, #D4764A)" : "rgba(212,165,116,0.2)",
+                background: user ? th.avatarGradient : th.accentBgSubtle,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: user ? 28 : 32, color: "white", fontFamily: "'DM Sans', sans-serif",
                 fontWeight: 700
@@ -2270,25 +2333,73 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               </div>
               {user ? (
                 <div>
-                  <h2 style={{ fontSize: 22, color: "#3D3028", fontWeight: 400, marginBottom: 4 }}>
+                  <h2 style={{ fontSize: 22, color: th.text, fontWeight: 400, marginBottom: 4 }}>
                     {user.user_metadata?.full_name || user.email?.split("@")[0] || "You"}
                   </h2>
                   <p style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                    color: "#A8957F", marginBottom: 4
+                    color: th.textMuted, marginBottom: 4
                   }}>
                     {user.email}
                   </p>
                   <div style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
-                    background: "rgba(130,180,130,0.1)", padding: "4px 12px",
+                    background: th.syncBg, padding: "4px 12px",
                     borderRadius: 100, fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 11, color: "#5A8A5A", fontWeight: 500
+                    fontSize: 11, color: th.syncText, fontWeight: 500
                   }}>
                     ☁️ Synced to cloud
                   </div>
                 </div>
-              ) : null}
+              )}
+            </div>
+
+            {/* Stats Summary */}
+            <div className="card" style={{ animation: "fadeUp 0.55s ease-out" }}>
+              <div style={{
+                fontSize: 11, fontFamily: "'DM Sans', sans-serif",
+                textTransform: "uppercase", letterSpacing: 2,
+                color: th.textMuted, marginBottom: 16, fontWeight: 600
+              }}>
+                Theme
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {Object.entries(THEMES).map(([key, theme]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setActiveTheme(key);
+                      storage.set("shine-theme", JSON.stringify(key));
+                    }}
+                    style={{
+                      padding: "12px 10px", borderRadius: 16,
+                      border: activeTheme === key
+                        ? `2px solid ${theme.accent}`
+                        : `1px solid ${th.cardBorder}`,
+                      background: activeTheme === key
+                        ? (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)')
+                        : 'transparent',
+                      cursor: "pointer", textAlign: "center",
+                      transition: "all 0.3s",
+                    }}
+                  >
+                    <div style={{ fontSize: 22, marginBottom: 4 }}>{theme.emoji}</div>
+                    <div style={{
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 12,
+                      color: activeTheme === key ? th.accent : th.textMuted,
+                      fontWeight: activeTheme === key ? 600 : 400,
+                    }}>
+                      {theme.name}
+                    </div>
+                    {/* Mini preview bar */}
+                    <div style={{
+                      marginTop: 6, height: 4, borderRadius: 2, overflow: "hidden",
+                      background: theme.bg,
+                      border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+                    }} />
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Stats Summary */}
@@ -2296,7 +2407,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: "#8B7355", marginBottom: 16, fontWeight: 600
+                color: th.textMuted, marginBottom: 16, fontWeight: 600
               }}>
                 Your Journey
               </div>
@@ -2309,16 +2420,16 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 ].map((stat, i) => (
                   <div key={i} style={{
                     padding: 14, borderRadius: 16,
-                    background: "rgba(255,255,255,0.5)",
+                    background: th.moodBg,
                     textAlign: "center"
                   }}>
                     <div style={{ fontSize: 22, marginBottom: 4 }}>{stat.icon}</div>
                     <div style={{
                       fontFamily: "'DM Sans', sans-serif", fontSize: 18,
-                      color: "#3D3028", fontWeight: 600
+                      color: th.text, fontWeight: 600
                     }}>{stat.value}</div>
                     <div style={{
-                      fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#A8957F"
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: th.textMuted
                     }}>{stat.label}</div>
                   </div>
                 ))}
@@ -2329,7 +2440,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             <div className="card" style={{
               animation: "fadeUp 0.7s ease-out", cursor: "pointer",
               background: isPremium
-                ? "linear-gradient(135deg, rgba(232,151,107,0.1), rgba(255,255,255,0.7))"
+                ? `linear-gradient(135deg, ${th.accentBgSubtle}, ${th.cardBg})`
                 : undefined
             }} onClick={() => setShowUpgrade(true)}>
               <div style={{
@@ -2338,8 +2449,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div style={{
                   width: 48, height: 48, borderRadius: 16,
                   background: isPremium
-                    ? "linear-gradient(135deg, #E8976B, #D4764A)"
-                    : "rgba(232,151,107,0.12)",
+                    ? `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`
+                    : th.accentBg,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 22
                 }}>
@@ -2348,13 +2459,13 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 <div>
                   <h3 style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: 16,
-                    color: "#3D3028", fontWeight: 600, marginBottom: 2
+                    color: th.text, fontWeight: 600, marginBottom: 2
                   }}>
                     {isPremium ? "Daily Shine Pro" : "Upgrade to Pro"}
                   </h3>
                   <p style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-                    color: "#A8957F"
+                    color: th.textMuted
                   }}>
                     {isPremium ? "Unlimited AI features active" : "Unlimited AI coaching, reframes & more"}
                   </p>
@@ -2379,7 +2490,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             <button onClick={() => setActiveTab("home")} style={{
               padding: "10px", background: "none", border: "none",
               fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-              color: "#A8957F", cursor: "pointer", textAlign: "center"
+              color: th.textMuted, cursor: "pointer", textAlign: "center"
             }}>
               ← Back to Today
             </button>
@@ -2394,7 +2505,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             icon: "🌟",
             title: "Welcome to Daily Shine",
             desc: "Your daily companion for positivity, mindfulness, and personal growth. Let's show you around!",
-            color: "#E8976B"
+            color: th.accent
           },
           {
             icon: "☀️",
@@ -2429,14 +2540,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           {
             icon: "✨",
             title: "Free & Pro",
-            desc: "You get 3 free AI uses per day. Upgrade to Pro for unlimited AI coaching, reframes, compassion letters, and insights — $7.97/mo.",
-            color: "#E8976B"
+            desc: "You get 3 free AI uses per day. Upgrade to Pro for unlimited AI coaching, reframes, compassion letters, and insights — $4.99/mo.",
+            color: th.accent
           },
           {
             icon: "🚀",
             title: "You're all set!",
             desc: "Start by logging your mood on the Today tab. Every small step counts. Your positivity journey begins now!",
-            color: "#D4764A"
+            color: th.accentAlt
           },
         ];
         const slide = welcomeSlides[welcomeStep];
@@ -2468,7 +2579,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               </div>
 
               <h2 style={{
-                fontSize: 22, color: "#3D3028", fontWeight: 400,
+                fontSize: 22, color: th.text, fontWeight: 400,
                 marginBottom: 10, fontFamily: "'Playfair Display', serif"
               }}>
                 {slide.title}
@@ -2476,7 +2587,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                color: "#6B5D4F", lineHeight: 1.6, marginBottom: 28
+                color: th.textMuted, lineHeight: 1.6, marginBottom: 28
               }}>
                 {slide.desc}
               </p>
@@ -2502,14 +2613,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     flex: 1, padding: "14px", borderRadius: 100,
                     border: "1px solid rgba(0,0,0,0.1)", background: "white",
                     fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                    color: "#6B5D4F", cursor: "pointer", fontWeight: 500
+                    color: th.textMuted, cursor: "pointer", fontWeight: 500
                   }}>
                     Back
                   </button>
                 )}
                 <button onClick={() => {
                   if (isLast) {
-                    localStorage.setItem("shine-welcome-seen-local", "true");
+                    storage.set("shine-welcome-seen", JSON.stringify(true));
                     setShowWelcome(false);
                     setWelcomeStep(0);
                   } else {
@@ -2529,12 +2640,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
               {isFirst && (
                 <button onClick={() => {
-                  localStorage.setItem("shine-welcome-seen-local", "true");
+                  storage.set("shine-welcome-seen", JSON.stringify(true));
                   setShowWelcome(false);
                 }} style={{
                   marginTop: 12, padding: "8px", border: "none",
                   background: "transparent", fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 13, color: "#A8957F", cursor: "pointer"
+                  fontSize: 13, color: th.textMuted, cursor: "pointer"
                 }}>
                   Skip — I'll explore on my own
                 </button>
@@ -2560,12 +2671,12 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           }} onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>✨</div>
-              <h2 style={{ fontSize: 26, color: "#3D3028", fontWeight: 400, marginBottom: 8 }}>
+              <h2 style={{ fontSize: 26, color: th.text, fontWeight: 400, marginBottom: 8 }}>
                 Unlock Daily Shine Pro
               </h2>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                color: "#A8957F", lineHeight: 1.5
+                color: th.textMuted, lineHeight: 1.5
               }}>
                 Unlimited AI-powered tools to support your growth every day.
               </p>
@@ -2602,19 +2713,19 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               width: "100%", padding: "16px", borderRadius: 100, border: "none",
               background: isPremium
                 ? "rgba(200,100,100,0.15)"
-                : "linear-gradient(135deg, #E8976B, #D4764A)",
+                : `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`,
               color: isPremium ? "#A06050" : "white",
               fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
               cursor: upgradeLoading ? "wait" : "pointer", transition: "all 0.3s", marginBottom: 10,
               opacity: upgradeLoading ? 0.7 : 1,
             }}>
-              {upgradeLoading ? "Redirecting to checkout..." : isPremium ? "Manage Subscription" : "Upgrade to Pro — $7.97/mo"}
+              {upgradeLoading ? "Redirecting to checkout..." : isPremium ? "Manage Subscription" : "Upgrade to Pro — $4.99/mo"}
             </button>
 
             {!isPremium && (
               <p style={{
                 textAlign: "center", fontFamily: "'DM Sans', sans-serif",
-                fontSize: 12, color: "#A8957F"
+                fontSize: 12, color: th.textMuted
               }}>
                 Free users get {FREE_AI_LIMIT} AI uses per day
               </p>
@@ -2624,7 +2735,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               width: "100%", padding: "10px", borderRadius: 100,
               border: "none", background: "transparent",
               fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-              color: "#A8957F", cursor: "pointer"
+              color: th.textMuted, cursor: "pointer"
             }}>
               Maybe later
             </button>
@@ -2635,8 +2746,8 @@ Respond with ONLY a JSON object (no markdown, no backticks):
       {/* Bottom Navigation */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
-        background: "rgba(255,248,240,0.9)", backdropFilter: "blur(20px)",
-        borderTop: "1px solid rgba(212,165,116,0.15)",
+        background: th.navBg, backdropFilter: "blur(20px)",
+        borderTop: `1px solid ${th.navBorder}`,
         padding: "8px 0 max(8px, env(safe-area-inset-bottom))",
         zIndex: 10
       }}>
@@ -2694,14 +2805,14 @@ function RandomActCard() {
       <div style={{
         fontSize: 11, fontFamily: "'DM Sans', sans-serif",
         textTransform: "uppercase", letterSpacing: 2,
-        color: "#8B7355", marginBottom: 20, fontWeight: 600
+        color: th.textMuted, marginBottom: 20, fontWeight: 600
       }}>
         Random Act of Kindness
       </div>
       {act && (
         <p style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: 16,
-          color: "#3D3028", marginBottom: 20, lineHeight: 1.5,
+          color: th.text, marginBottom: 20, lineHeight: 1.5,
           animation: "fadeUp 0.4s ease-out"
         }}>
           💛 {act}
@@ -2709,7 +2820,7 @@ function RandomActCard() {
       )}
       <button onClick={generate} style={{
         padding: "12px 28px", borderRadius: 100, border: "none",
-        background: "linear-gradient(135deg, #E8976B, #D4764A)",
+        background: `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`,
         color: "white", fontFamily: "'DM Sans', sans-serif",
         fontSize: 14, fontWeight: 500, cursor: "pointer",
         transition: "all 0.3s"
@@ -2793,7 +2904,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
       });
 
       const data = await response.json();
-
+      
       // If API returned fallback signal, use local reframe
       if (data.fallback) {
         const local = getLocalReframe(negativeThought);
@@ -2829,7 +2940,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
         <div style={{
           fontSize: 11, fontFamily: "'DM Sans', sans-serif",
           textTransform: "uppercase", letterSpacing: 2,
-          color: "#8B7355", fontWeight: 600
+          color: th.textMuted, fontWeight: 600
         }}>
           🔄 Reframe It
         </div>
@@ -2847,9 +2958,9 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
           {isPremium && (
             <span style={{
               fontFamily: "'DM Sans', sans-serif", fontSize: 10,
-              background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+              background: `linear-gradient(135deg, ${th.accentBg}, ${th.accentBgSubtle})`,
               padding: "4px 8px", borderRadius: 100,
-              color: "#C4764A", fontWeight: 600
+              color: th.accent, fontWeight: 600
             }}>
               ✦ PRO
             </span>
@@ -2858,7 +2969,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
       </div>
       <p style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-        color: "#A8957F", marginBottom: 16, lineHeight: 1.5
+        color: th.textMuted, marginBottom: 16, lineHeight: 1.5
       }}>
         Type a negative thought and get a healthier perspective.
       </p>
@@ -2869,13 +2980,13 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
         placeholder={`e.g., "I'm not good enough" or "Everything always goes wrong"`}
         style={{
           width: "100%", minHeight: 72, padding: 16,
-          background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+          background: th.moodBg, border: `1px solid ${th.cardBorder}`,
           borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
           fontSize: 14, color: "#4A3F35", resize: "vertical",
           outline: "none", transition: "border-color 0.3s"
         }}
         onFocus={e => e.target.style.borderColor = "rgba(107,162,232,0.4)"}
-        onBlur={e => e.target.style.borderColor = "rgba(212,165,116,0.2)"}
+        onBlur={e => e.target.style.borderColor = th.accentBgSubtle}
       />
 
       <button onClick={reframe} disabled={loading || !negativeThought.trim()} style={{
@@ -2883,7 +2994,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
         border: "none",
         background: (negativeThought.trim() && !loading)
           ? "linear-gradient(135deg, #6BA2E8, #5B8AC4)"
-          : "rgba(212,165,116,0.2)",
+          : th.accentBgSubtle,
         color: (negativeThought.trim() && !loading) ? "white" : "#A8957F",
         fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
         cursor: (negativeThought.trim() && !loading) ? "pointer" : "default",
@@ -2922,7 +3033,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
             padding: "14px 18px", background: "rgba(196,168,130,0.08)",
             borderRadius: 16, marginBottom: 12,
             fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-            color: "#8B7355", fontStyle: "italic"
+            color: th.textMuted, fontStyle: "italic"
           }}>
             💛 {reframedThought.validation}
           </div>
@@ -2943,7 +3054,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
             </div>
             <p style={{
               fontFamily: "'Instrument Serif', Georgia, serif",
-              fontSize: 19, color: "#3D3028", lineHeight: 1.5,
+              fontSize: 19, color: th.text, lineHeight: 1.5,
               fontStyle: "italic"
             }}>
               "{reframedThought.reframe}"
@@ -2968,7 +3079,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
             <div style={{
               padding: "12px 16px", background: "rgba(130,180,130,0.08)",
               borderRadius: 14, fontFamily: "'DM Sans', sans-serif",
-              fontSize: 13, color: "#5A8A5A"
+              fontSize: 13, color: th.syncText
             }}>
               ⚡ <strong>Try this:</strong> {reframedThought.action}
             </div>
@@ -2977,9 +3088,9 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
           {/* Reset button */}
           <button onClick={() => { setNegativeThought(""); setReframedThought(null); }} style={{
             marginTop: 16, padding: "8px 20px", borderRadius: 100,
-            border: "1px solid rgba(212,165,116,0.2)", background: "transparent",
+            border: `1px solid ${th.cardBorder}`, background: "transparent",
             fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-            color: "#A8957F", cursor: "pointer", transition: "all 0.3s"
+            color: th.textMuted, cursor: "pointer", transition: "all 0.3s"
           }}>
             Reframe another thought
           </button>
@@ -2990,7 +3101,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
       {history.length > 1 && (
         <div style={{
           marginTop: 16, textAlign: "center",
-          fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#A8957F"
+          fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: th.textMuted
         }}>
           You've reframed {history.length} thoughts today ✨
         </div>
@@ -3051,7 +3162,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
       });
 
       const data = await response.json();
-
+      
       if (data.fallback) {
         setLetter(getLocalLetter());
         setLoading(false);
@@ -3076,7 +3187,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
         <div style={{
           fontSize: 11, fontFamily: "'DM Sans', sans-serif",
           textTransform: "uppercase", letterSpacing: 2,
-          color: "#8B7355", fontWeight: 600
+          color: th.textMuted, fontWeight: 600
         }}>
           💌 Self-Compassion Letter
         </div>
@@ -3105,7 +3216,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
       </div>
       <p style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-        color: "#A8957F", marginBottom: 16, lineHeight: 1.5
+        color: th.textMuted, marginBottom: 16, lineHeight: 1.5
       }}>
         What are you being hard on yourself about? Let your kinder self write you a letter.
       </p>
@@ -3118,20 +3229,20 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
             placeholder={`e.g., "I feel like I wasted my whole day" or "I keep making the same mistakes"`}
             style={{
               width: "100%", minHeight: 72, padding: 16,
-              background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+              background: th.moodBg, border: `1px solid ${th.cardBorder}`,
               borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
               fontSize: 14, color: "#4A3F35", resize: "vertical",
               outline: "none", transition: "border-color 0.3s"
             }}
             onFocus={e => e.target.style.borderColor = "rgba(180,130,196,0.4)"}
-            onBlur={e => e.target.style.borderColor = "rgba(212,165,116,0.2)"}
+            onBlur={e => e.target.style.borderColor = th.accentBgSubtle}
           />
           <button onClick={generateLetter} disabled={loading || !situation.trim()} style={{
             marginTop: 12, padding: "12px 28px", borderRadius: 100,
             border: "none",
             background: (situation.trim() && !loading)
               ? "linear-gradient(135deg, #B882C8, #9B6AAF)"
-              : "rgba(212,165,116,0.2)",
+              : th.accentBgSubtle,
             color: (situation.trim() && !loading) ? "white" : "#A8957F",
             fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
             cursor: (situation.trim() && !loading) ? "pointer" : "default",
@@ -3253,7 +3364,7 @@ Rules:
       });
 
       const data = await response.json();
-
+      
       if (data.fallback) {
         const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
         setMessages(prev => [...prev, { role: "coach", text: local, isLocal: true }]);
@@ -3279,7 +3390,7 @@ Rules:
         <div style={{
           fontSize: 11, fontFamily: "'DM Sans', sans-serif",
           textTransform: "uppercase", letterSpacing: 2,
-          color: "#8B7355", fontWeight: 600
+          color: th.textMuted, fontWeight: 600
         }}>
           💬 Ask Your Coach
         </div>
@@ -3297,9 +3408,9 @@ Rules:
           {isPremium && (
             <span style={{
               fontFamily: "'DM Sans', sans-serif", fontSize: 10,
-              background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+              background: `linear-gradient(135deg, ${th.accentBg}, ${th.accentBgSubtle})`,
               padding: "4px 10px", borderRadius: 100,
-              color: "#C4764A", fontWeight: 600
+              color: th.accent, fontWeight: 600
             }}>
               ✦ PRO
             </span>
@@ -3309,7 +3420,7 @@ Rules:
 
       <p style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-        color: "#A8957F", marginBottom: 16, lineHeight: 1.5
+        color: th.textMuted, marginBottom: 16, lineHeight: 1.5
       }}>
         Ask anything about mindset, motivation, stress, or life — your personal positivity coach is here.
       </p>
@@ -3329,14 +3440,14 @@ Rules:
               <div style={{
                 maxWidth: "85%", padding: "12px 16px", borderRadius: 18,
                 background: msg.role === "user"
-                  ? "linear-gradient(135deg, #E8976B, #D4A574)"
+                  ? `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`
                   : "rgba(255,255,255,0.7)",
                 color: msg.role === "user" ? "white" : "#4A3F35",
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
                 lineHeight: 1.5,
                 borderBottomRightRadius: msg.role === "user" ? 6 : 18,
                 borderBottomLeftRadius: msg.role === "coach" ? 6 : 18,
-                border: msg.role === "coach" ? "1px solid rgba(212,165,116,0.15)" : "none",
+                border: msg.role === "coach" ? `1px solid ${th.cardBorder}` : "none",
                 animation: "fadeUp 0.3s ease-out"
               }}>
                 {msg.text}
@@ -3350,8 +3461,8 @@ Rules:
               <div style={{
                 padding: "12px 20px", borderRadius: 18, borderBottomLeftRadius: 6,
                 background: "rgba(255,255,255,0.7)",
-                border: "1px solid rgba(212,165,116,0.15)",
-                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#A8957F"
+                `border: 1px solid ${th.cardBorder}`,
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: th.textMuted
               }}>
                 <span style={{ animation: "pulseGlow 1.5s ease-in-out infinite" }}>Thinking...</span>
               </div>
@@ -3370,7 +3481,7 @@ Rules:
           placeholder={canUseAI ? "Ask me anything..." : "Ask me anything (local mode)..."}
           style={{
             flex: 1, padding: "12px 16px",
-            background: "rgba(255,255,255,0.5)", border: "1px solid rgba(212,165,116,0.2)",
+            background: th.moodBg, border: `1px solid ${th.cardBorder}`,
             borderRadius: 16, fontFamily: "'DM Sans', sans-serif",
             fontSize: 14, color: "#4A3F35", outline: "none"
           }}
@@ -3378,8 +3489,8 @@ Rules:
         <button onClick={askCoach} disabled={loading || !question.trim()} style={{
           width: 48, height: 48, borderRadius: 16, border: "none", flexShrink: 0,
           background: (question.trim() && !loading)
-            ? "linear-gradient(135deg, #E8976B, #D4764A)"
-            : "rgba(212,165,116,0.2)",
+            ? `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`
+            : th.accentBgSubtle,
           color: (question.trim() && !loading) ? "white" : "#A8957F",
           fontSize: 18, cursor: (question.trim() && !loading) ? "pointer" : "default",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -3394,9 +3505,9 @@ Rules:
         <button onClick={onUpgrade} style={{
           marginTop: 14, width: "100%", padding: "12px", borderRadius: 100,
           border: "none",
-          background: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
+          background: `linear-gradient(135deg, ${th.accentBg}, ${th.accentBgSubtle})`,
           fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-          color: "#C4764A", fontWeight: 500, cursor: "pointer"
+          color: th.accent, fontWeight: 500, cursor: "pointer"
         }}>
           ✦ Upgrade to Pro for unlimited AI coaching
         </button>
