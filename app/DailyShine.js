@@ -2351,7 +2351,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     ☁️ Synced to cloud
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Stats Summary */}
