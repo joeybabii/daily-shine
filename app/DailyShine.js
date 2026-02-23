@@ -1433,16 +1433,16 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             </div>
 
             {/* AI Coach */}
-            <AskCoachCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} />
+            <AskCoachCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} th={th} />
 
             {/* AI Reframe Tool */}
-            <ReframeCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} />
+            <ReframeCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} th={th} />
 
             {/* Self-Compassion Letter */}
-            <CompassionCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} />
+            <CompassionCard canUseAI={canUseAI} aiUsesLeft={aiUsesLeft} isPremium={isPremium} trackAIUse={trackAIUse} onUpgrade={() => setShowUpgrade(true)} th={th} />
 
             {/* Random Act of Kindness */}
-            <RandomActCard />
+            <RandomActCard th={th} />
           </div>
         )}
 
@@ -2777,7 +2777,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
   );
 }
 
-function RandomActCard() {
+function RandomActCard({ th }) {
   const [act, setAct] = useState(null);
   const acts = [
     "Leave a sticky note with a kind message somewhere public",
@@ -2831,7 +2831,7 @@ function RandomActCard() {
   );
 }
 
-function ReframeCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade }) {
+function ReframeCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade, th }) {
   const [negativeThought, setNegativeThought] = useState("");
   const [reframedThought, setReframedThought] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -3110,7 +3110,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
   );
 }
 
-function CompassionCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade }) {
+function CompassionCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade, th }) {
   const [situation, setSituation] = useState("");
   const [letter, setLetter] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -3308,7 +3308,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
   );
 }
 
-function AskCoachCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade }) {
+function AskCoachCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade, th }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -3461,7 +3461,7 @@ Rules:
               <div style={{
                 padding: "12px 20px", borderRadius: 18, borderBottomLeftRadius: 6,
                 background: "rgba(255,255,255,0.7)",
-                `border: 1px solid ${th.cardBorder}`,
+                border: `1px solid ${th.cardBorder}`,
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: th.textMuted
               }}>
                 <span style={{ animation: "pulseGlow 1.5s ease-in-out infinite" }}>Thinking...</span>
