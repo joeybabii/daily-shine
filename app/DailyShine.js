@@ -1775,7 +1775,7 @@ export default function DailyShine({ user }) {
   const [learnCategory, setLearnCategory] = useState("all");
   const [expandedGuide, setExpandedGuide] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
-  const [aiUsesToday, setAiUsesToday] = useState(0);
+  const [aiCreditsRemaining, setAiCreditsRemaining] = useState(0);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [stripeCustomerId, setStripeCustomerId] = useState(null);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
@@ -1873,9 +1873,9 @@ export default function DailyShine({ user }) {
 
   const th = THEMES[activeTheme] || THEMES.warmPeach;
 
-  const FREE_AI_LIMIT = 3; // Free users get 3 AI uses per day
-  const aiUsesLeft = isPremium ? Infinity : Math.max(0, FREE_AI_LIMIT - aiUsesToday);
-  const canUseAI = isPremium || aiUsesToday < FREE_AI_LIMIT;
+  const PRO_MONTHLY_AI_CREDITS = 300;
+  const aiUsesLeft = isPremium ? aiCreditsRemaining : 0;
+  const canUseAI = isPremium && aiCreditsRemaining > 0;
 
   const dayOfYear = getDayOfYear();
   const dateKey = getDateKey();
@@ -1990,10 +1990,6 @@ export default function DailyShine({ user }) {
         if (stripeRes) setStripeCustomerId(JSON.parse(stripeRes.value));
       } catch {}
       try {
-        const usageRes = await storage.get("shine-ai-usage-" + dateKey);
-        if (usageRes) setAiUsesToday(JSON.parse(usageRes.value));
-      } catch {}
-      try {
         const themeRes = await storage.get("shine-theme");
         if (themeRes) setActiveTheme(JSON.parse(themeRes.value));
       } catch {}
@@ -2004,6 +2000,7 @@ export default function DailyShine({ user }) {
         try {
           const verifyData = await postAuthed('/api/stripe/verify');
           setIsPremium(!!verifyData.isPremium);
+          setAiCreditsRemaining(verifyData.aiCreditsRemaining || 0);
           storage.set("shine-premium", JSON.stringify(!!verifyData.isPremium));
           if (verifyData.stripeCustomerId) {
             setStripeCustomerId(verifyData.stripeCustomerId);
@@ -2179,10 +2176,10 @@ export default function DailyShine({ user }) {
     } catch {}
   };
 
-  const trackAIUse = async () => {
-    const newCount = aiUsesToday + 1;
-    setAiUsesToday(newCount);
-    try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch {}
+  const trackAIUse = (creditsRemaining) => {
+    if (Number.isFinite(creditsRemaining)) {
+      setAiCreditsRemaining(Math.max(0, creditsRemaining));
+    }
   };
 
   const handleUpgrade = async () => {
@@ -2224,6 +2221,7 @@ export default function DailyShine({ user }) {
           postAuthed('/api/stripe/verify')
             .then(data => {
               setIsPremium(!!data.isPremium);
+              setAiCreditsRemaining(data.aiCreditsRemaining || 0);
               storage.set("shine-premium", JSON.stringify(!!data.isPremium));
               if (data.stripeCustomerId) {
                 setStripeCustomerId(data.stripeCustomerId);
@@ -2282,6 +2280,14 @@ export default function DailyShine({ user }) {
       };
     };
 
+    if (!canUseAI) {
+      const local = getLocalInsight();
+      setWeeklyInsight(local);
+      try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
+      setInsightLoading(false);
+      return;
+    }
+
     try {
       const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
@@ -2299,6 +2305,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         });
       
       if (data.fallback) {
+        if (data.limitReached) trackAIUse(0);
         const local = getLocalInsight();
         setWeeklyInsight(local);
         try { await storage.set("shine-insight-" + dateKey, JSON.stringify(local)); } catch {}
@@ -2306,6 +2313,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         return;
       }
 
+      trackAIUse(data.creditsRemaining);
       const text = data.content.map(i => i.text || "").join("\n");
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
@@ -3946,7 +3954,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                     fontFamily: "'DM Sans', sans-serif", fontSize: 13,
                     color: th.textMuted
                   }}>
-                    {isPremium ? "Unlimited AI features active" : "Unlimited AI coaching, reframes & more"}
+                    {isPremium ? `${aiUsesLeft} of ${PRO_MONTHLY_AI_CREDITS} AI credits left this month` : "Local tools included · Pro unlocks real AI"}
                   </p>
                 </div>
               </div>
@@ -4019,7 +4027,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           {
             icon: "✨",
             title: "Free & Pro",
-            desc: "You get 3 free AI uses per day. Upgrade to Pro for unlimited AI coaching, reframes, compassion letters, and insights — $7.97/mo.",
+            desc: "Free includes the local versions of Daily Shine's tools. Pro adds 300 real AI responses per month for coaching, reframes, compassion letters, and insights — $7.97/mo.",
             color: th.accent
           },
           {
@@ -4157,17 +4165,17 @@ Respond with ONLY a JSON object (no markdown, no backticks):
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14,
                 color: th.textMuted, lineHeight: 1.5
               }}>
-                Unlimited AI-powered tools to support your growth every day.
+                Real AI-powered tools with a protected monthly credit allowance.
               </p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
               {[
-                { icon: "💬", text: "Unlimited AI Coach conversations" },
-                { icon: "🔄", text: "Unlimited thought reframes" },
-                { icon: "💌", text: "Unlimited compassion letters" },
-                { icon: "🧠", text: "Unlimited weekly insights" },
-                { icon: "⚡", text: "Priority AI responses" },
+                { icon: "💬", text: "300 AI responses every month" },
+                { icon: "🔄", text: "AI-powered thought reframes" },
+                { icon: "💌", text: "AI compassion letters" },
+                { icon: "🧠", text: "AI weekly insights" },
+                { icon: "🛡️", text: "Credits reset monthly" },
               ].map((perk, i) => (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 12,
@@ -4201,14 +4209,14 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               {upgradeLoading ? "Redirecting to checkout..." : isPremium ? "Manage Subscription" : "Upgrade to Pro — $7.97/mo"}
             </button>
 
-            {!isPremium && (
-              <p style={{
-                textAlign: "center", fontFamily: "'DM Sans', sans-serif",
-                fontSize: 12, color: th.textMuted
-              }}>
-                Free users get {FREE_AI_LIMIT} AI uses per day
-              </p>
-            )}
+            <p style={{
+              textAlign: "center", fontFamily: "'DM Sans', sans-serif",
+              fontSize: 12, color: th.textMuted
+            }}>
+              {isPremium
+                ? `${aiUsesLeft} of ${PRO_MONTHLY_AI_CREDITS} AI credits remaining this month`
+                : "Free uses local tools only — no paid AI calls"}
+            </p>
 
             <button onClick={() => setShowUpgrade(false)} style={{
               width: "100%", padding: "10px", borderRadius: 100,
@@ -4524,7 +4532,6 @@ function ReframeCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade, t
     }
 
     try {
-      await trackAIUse();
       const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 500,
@@ -4546,6 +4553,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
       
       // If API returned fallback signal, use local reframe
       if (data.fallback) {
+        if (data.limitReached) trackAIUse(0);
         const local = getLocalReframe(negativeThought);
         setReframedThought(local);
         setIsAiMode(false);
@@ -4591,7 +4599,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
               padding: "4px 8px", borderRadius: 100,
               color: aiUsesLeft > 0 ? "#5A8A5A" : "#A06050", fontWeight: 600
             }}>
-              {aiUsesLeft > 0 ? `${aiUsesLeft} free` : "Local mode"}
+              {isPremium ? `${aiUsesLeft} credits` : "Local mode"}
             </span>
           )}
           {isPremium && (
@@ -4781,7 +4789,6 @@ function CompassionCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade
     }
 
     try {
-      await trackAIUse();
       const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 500,
@@ -4802,6 +4809,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
         });
       
       if (data.fallback) {
+        if (data.limitReached) trackAIUse(0);
         setLetter(getLocalLetter());
         setLoading(false);
         return;
@@ -4837,7 +4845,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
               padding: "4px 8px", borderRadius: 100,
               color: aiUsesLeft > 0 ? "#5A8A5A" : "#A06050", fontWeight: 600
             }}>
-              {aiUsesLeft > 0 ? `${aiUsesLeft} free` : "Local mode"}
+              {isPremium ? `${aiUsesLeft} credits` : "Local mode"}
             </span>
           )}
           {isPremium && (
@@ -5011,12 +5019,14 @@ Rules:
         });
       
       if (data.fallback) {
+        if (data.limitReached) trackAIUse(0);
         const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
         setMessages(prev => [...prev, { role: "coach", text: local, isLocal: true }]);
         setLoading(false);
         return;
       }
 
+      trackAIUse(data.creditsRemaining);
       const text = data.content.map(i => i.text || "").join("\n").trim();
       setMessages(prev => [...prev, { role: "coach", text, isLocal: false }]);
     } catch {
@@ -5047,7 +5057,7 @@ Rules:
               padding: "4px 10px", borderRadius: 100,
               color: aiUsesLeft > 0 ? "#5A8A5A" : "#A06050", fontWeight: 600
             }}>
-              {aiUsesLeft > 0 ? `${aiUsesLeft} free left today` : "Limit reached"}
+              {isPremium ? (aiUsesLeft > 0 ? `${aiUsesLeft} credits` : "Credits used") : "Local mode"}
             </span>
           )}
           {isPremium && (
@@ -5146,7 +5156,7 @@ Rules:
       </div>
 
       {/* Upgrade nudge */}
-      {!isPremium && aiUsesLeft === 0 && (
+      {!isPremium && (
         <button onClick={onUpgrade} style={{
           marginTop: 14, width: "100%", padding: "12px", borderRadius: 100,
           border: "none",
@@ -5154,7 +5164,7 @@ Rules:
           fontFamily: "'DM Sans', sans-serif", fontSize: 13,
           color: th.accent, fontWeight: 500, cursor: "pointer"
         }}>
-          ✦ Upgrade to Pro for unlimited AI coaching
+          ✦ Upgrade to Pro for 300 AI credits/month
         </button>
       )}
     </div>
