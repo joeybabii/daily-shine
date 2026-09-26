@@ -16,6 +16,7 @@ Installable app: PWA
 
 ## Verified working
 
+- iPhone Free-version smoke test passed: account flow, core tracking/journaling, local-mode tools, persistence, Pro pricing/credit copy, and Add to Home Screen all appeared to work in Joey's test.
 - Free-local / 300-credit Pro model is deployed in the production bundle.
 - Production bundle no longer contains the old 3-free-AI / unlimited-AI messaging.
 - Final repaired `main` deployment is READY in Vercel.
