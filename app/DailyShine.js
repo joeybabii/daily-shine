@@ -1968,6 +1968,26 @@ export default function DailyShine({ user }) {
         const themeRes = await storage.get("shine-theme");
         if (themeRes) setActiveTheme(JSON.parse(themeRes.value));
       } catch {}
+
+      // Server-side verification is authoritative for Pro access.
+      // Local storage is only a cache and must never grant paid access by itself.
+      if (user?.id) {
+        try {
+          const verifyRes = await fetch('/api/stripe/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          const verifyData = await verifyRes.json();
+          setIsPremium(!!verifyData.isPremium);
+          storage.set("shine-premium", JSON.stringify(!!verifyData.isPremium));
+          if (verifyData.stripeCustomerId) {
+            setStripeCustomerId(verifyData.stripeCustomerId);
+            storage.set("shine-stripe-customer", JSON.stringify(verifyData.stripeCustomerId));
+          }
+        } catch {}
+      }
+
       setLoaded(true);
       setTimeout(() => setAnimateIn(true), 100);
       
@@ -2141,12 +2161,6 @@ export default function DailyShine({ user }) {
     try { await storage.set("shine-ai-usage-" + dateKey, JSON.stringify(newCount)); } catch {}
   };
 
-  const togglePremium = async () => {
-    const newVal = !isPremium;
-    setIsPremium(newVal);
-    try { await storage.set("shine-premium", JSON.stringify(newVal)); } catch {}
-  };
-
   const handleUpgrade = async () => {
     if (!user) return;
     setUpgradeLoading(true);
@@ -2186,13 +2200,29 @@ export default function DailyShine({ user }) {
     }
   };
 
-  // Check for ?upgraded=true from Stripe redirect
+  // Check for ?upgraded=true from Stripe redirect — verify with server
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('upgraded') === 'true') {
-        setIsPremium(true);
-        storage.set("shine-premium", JSON.stringify(true));
+        // Never trust the URL parameter itself to grant Pro access.
+        if (user?.id) {
+          fetch('/api/stripe/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              setIsPremium(!!data.isPremium);
+              storage.set("shine-premium", JSON.stringify(!!data.isPremium));
+              if (data.stripeCustomerId) {
+                setStripeCustomerId(data.stripeCustomerId);
+                storage.set("shine-stripe-customer", JSON.stringify(data.stripeCustomerId));
+              }
+            })
+            .catch(() => {});
+        }
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
@@ -3985,7 +4015,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           {
             icon: "✨",
             title: "Free & Pro",
-            desc: "You get 3 free AI uses per day. Upgrade to Pro for unlimited AI coaching, reframes, compassion letters, and insights — $4.99/mo.",
+            desc: "You get 3 free AI uses per day. Upgrade to Pro for unlimited AI coaching, reframes, compassion letters, and insights — $7.97/mo.",
             color: th.accent
           },
           {
@@ -4164,7 +4194,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
               cursor: upgradeLoading ? "wait" : "pointer", transition: "all 0.3s", marginBottom: 10,
               opacity: upgradeLoading ? 0.7 : 1,
             }}>
-              {upgradeLoading ? "Redirecting to checkout..." : isPremium ? "Manage Subscription" : "Upgrade to Pro — $4.99/mo"}
+              {upgradeLoading ? "Redirecting to checkout..." : isPremium ? "Manage Subscription" : "Upgrade to Pro — $7.97/mo"}
             </button>
 
             {!isPremium && (
