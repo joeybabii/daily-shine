@@ -78,7 +78,6 @@ export function getLocalData() {
       `shine-wins-${dateKey}`,
       `shine-mood-today-${dateKey}`,
       `shine-evening-${dateKey}`,
-      `shine-ai-usage-${dateKey}`,
       `shine-insight-${dateKey}`,
     ];
     
