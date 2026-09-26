@@ -5,21 +5,22 @@ const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
   : null;
 
-const FREE_AI_LIMIT = 3;
+const PRO_MONTHLY_AI_CREDITS = 300;
 const PRO_TEST_EMAILS = (process.env.PRO_TEST_EMAILS || '')
   .split(',')
   .map(e => e.trim().toLowerCase())
   .filter(Boolean);
 
+function getMonthStart() {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
+}
+
 export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   // No AI key means the client should use its built-in local fallback.
-  if (!apiKey) {
-    return NextResponse.json({ fallback: true }, { status: 200 });
-  }
-
-  if (!supabaseAdmin) {
+  if (!apiKey || !supabaseAdmin) {
     return NextResponse.json({ fallback: true }, { status: 200 });
   }
 
@@ -37,7 +38,6 @@ export async function POST(request) {
       return NextResponse.json({ fallback: true }, { status: 200 });
     }
 
-    // Pro status comes only from server-owned entitlements.
     const { data: entitlement } = await supabaseAdmin
       .from('user_entitlements')
       .select('is_premium')
@@ -47,24 +47,35 @@ export async function POST(request) {
     const isTestUser = !!user.email && PRO_TEST_EMAILS.includes(user.email.toLowerCase());
     const isPremium = isTestUser || !!entitlement?.is_premium;
 
+    // Free users get the local/non-API versions of Daily Shine's AI-style tools.
     if (!isPremium) {
-      const usageDate = new Date().toISOString().slice(0, 10);
-      const { data: usageResult, error: usageError } = await supabaseAdmin
-        .rpc('consume_ai_usage', {
-          p_user_id: user.id,
-          p_usage_date: usageDate,
-          p_limit: FREE_AI_LIMIT,
-        })
-        .single();
+      return NextResponse.json({
+        fallback: true,
+        upgradeRequired: true,
+        creditsRemaining: 0,
+      }, { status: 200 });
+    }
 
-      if (usageError || !usageResult) {
-        console.error('AI usage limit error:', usageError);
-        return NextResponse.json({ fallback: true }, { status: 200 });
-      }
+    const usageDate = getMonthStart();
+    const { data: currentUsage, error: currentUsageError } = await supabaseAdmin
+      .from('ai_usage')
+      .select('count')
+      .eq('user_id', user.id)
+      .eq('usage_date', usageDate)
+      .maybeSingle();
 
-      if (!usageResult.allowed) {
-        return NextResponse.json({ limitReached: true, fallback: true }, { status: 200 });
-      }
+    if (currentUsageError) {
+      console.error('AI usage lookup error:', currentUsageError);
+      return NextResponse.json({ fallback: true }, { status: 200 });
+    }
+
+    const used = currentUsage?.count || 0;
+    if (used >= PRO_MONTHLY_AI_CREDITS) {
+      return NextResponse.json({
+        fallback: true,
+        limitReached: true,
+        creditsRemaining: 0,
+      }, { status: 200 });
     }
 
     const body = await request.json();
@@ -90,7 +101,33 @@ export async function POST(request) {
       return NextResponse.json({ fallback: true }, { status: 200 });
     }
 
-    return NextResponse.json(data);
+    // Charge one credit only after Anthropic successfully returns a response.
+    const { data: usageResult, error: usageError } = await supabaseAdmin
+      .rpc('consume_ai_usage', {
+        p_user_id: user.id,
+        p_usage_date: usageDate,
+        p_limit: PRO_MONTHLY_AI_CREDITS,
+      })
+      .single();
+
+    if (usageError || !usageResult) {
+      console.error('AI usage consume error:', usageError);
+      return NextResponse.json({ fallback: true }, { status: 200 });
+    }
+
+    if (!usageResult.allowed) {
+      return NextResponse.json({
+        fallback: true,
+        limitReached: true,
+        creditsRemaining: 0,
+      }, { status: 200 });
+    }
+
+    return NextResponse.json({
+      ...data,
+      creditsRemaining: Math.max(0, PRO_MONTHLY_AI_CREDITS - usageResult.new_count),
+      monthlyCreditLimit: PRO_MONTHLY_AI_CREDITS,
+    });
   } catch (error) {
     console.error('AI route error:', error);
     return NextResponse.json({ fallback: true }, { status: 200 });
