@@ -18,6 +18,8 @@ function getMonthStart() {
 
 export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
+  let reservedUserId = null;
+  let reservedUsageDate = null;
 
   // No AI key means the client should use its built-in local fallback.
   if (!apiKey || !supabaseAdmin) {
@@ -88,6 +90,9 @@ export async function POST(request) {
       }, { status: 200 });
     }
 
+    reservedUserId = user.id;
+    reservedUsageDate = usageDate;
+
     const body = await request.json();
     const model = body.model || 'claude-haiku-4-5-20251001';
 
@@ -112,8 +117,13 @@ export async function POST(request) {
         p_user_id: user.id,
         p_usage_date: usageDate,
       });
+      reservedUserId = null;
+      reservedUsageDate = null;
       return NextResponse.json({ fallback: true }, { status: 200 });
     }
+
+    reservedUserId = null;
+    reservedUsageDate = null;
 
     return NextResponse.json({
       ...data,
@@ -121,6 +131,14 @@ export async function POST(request) {
       monthlyCreditLimit: PRO_MONTHLY_AI_CREDITS,
     });
   } catch (error) {
+    if (reservedUserId && reservedUsageDate && supabaseAdmin) {
+      try {
+        await supabaseAdmin.rpc('refund_ai_usage', {
+          p_user_id: reservedUserId,
+          p_usage_date: reservedUsageDate,
+        });
+      } catch {}
+    }
     console.error('AI route error:', error);
     return NextResponse.json({ fallback: true }, { status: 200 });
   }
