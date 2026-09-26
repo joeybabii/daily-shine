@@ -42,14 +42,14 @@ const storage = {
 };
 
 
-async function fetchAI(payload) {
-  if (!supabase) return { fallback: true };
+async function postAuthed(path, payload = {}) {
+  if (!supabase) return { error: 'Auth unavailable' };
 
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return { fallback: true };
+    if (!session?.access_token) return { error: 'Not signed in' };
 
-    const response = await fetch("/api/ai", {
+    const response = await fetch(path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -60,8 +60,13 @@ async function fetchAI(payload) {
 
     return await response.json();
   } catch {
-    return { fallback: true };
+    return { error: 'Request failed' };
   }
+}
+
+async function fetchAI(payload) {
+  const data = await postAuthed("/api/ai", payload);
+  return data?.error ? { fallback: true } : data;
 }
 
 const AFFIRMATIONS = [
@@ -1997,12 +2002,7 @@ export default function DailyShine({ user }) {
       // Local storage is only a cache and must never grant paid access by itself.
       if (user?.id) {
         try {
-          const verifyRes = await fetch('/api/stripe/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          });
-          const verifyData = await verifyRes.json();
+          const verifyData = await postAuthed('/api/stripe/verify');
           setIsPremium(!!verifyData.isPremium);
           storage.set("shine-premium", JSON.stringify(!!verifyData.isPremium));
           if (verifyData.stripeCustomerId) {
@@ -2189,12 +2189,7 @@ export default function DailyShine({ user }) {
     if (!user) return;
     setUpgradeLoading(true);
     try {
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, email: user.email }),
-      });
-      const data = await response.json();
+      const data = await postAuthed("/api/stripe/checkout");
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -2210,12 +2205,7 @@ export default function DailyShine({ user }) {
   const handleManageSubscription = async () => {
     if (!stripeCustomerId) return;
     try {
-      const response = await fetch("/api/stripe/portal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stripeCustomerId }),
-      });
-      const data = await response.json();
+      const data = await postAuthed("/api/stripe/portal");
       if (data.url) {
         window.location.href = data.url;
       }
@@ -2231,12 +2221,7 @@ export default function DailyShine({ user }) {
       if (params.get('upgraded') === 'true') {
         // Never trust the URL parameter itself to grant Pro access.
         if (user?.id) {
-          fetch('/api/stripe/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email }),
-          })
-            .then(res => res.json())
+          postAuthed('/api/stripe/verify')
             .then(data => {
               setIsPremium(!!data.isPremium);
               storage.set("shine-premium", JSON.stringify(!!data.isPremium));
