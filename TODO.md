@@ -4,6 +4,7 @@ Last updated: 2026-09-25
 
 ## P0 — Launch blockers
 
+- [x] Credit model code is deployed: Free stays local-only; Pro has 300 monthly AI credits.
 - [x] Confirm latest `main` commit deploys successfully to Vercel.
 - [x] Smoke-test production domain after deployment.
 - [ ] Test email sign-up, confirmation, sign-in, sign-out, and password reset.
