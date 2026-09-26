@@ -31,8 +31,11 @@ Installable app: PWA
 - Local-first storage plus Supabase cloud sync is implemented.
 - Stripe checkout, portal, verification, and webhook routes exist.
 - Server-owned `user_entitlements` table now stores paid access.
-- Server-owned `ai_usage` table plus `consume_ai_usage` function now enforce the free AI limit.
+- Server-owned `ai_usage` tracking now enforces the Pro monthly AI credit allowance.
 - AI requests now require an authenticated Supabase session.
+- Free accounts use local/non-API tool responses and do not call Anthropic.
+- Pro accounts receive 300 AI credits per month; one successful AI response uses one credit.
+- Failed AI generations refund their reserved credit.
 - Missing `/api/ai` route has been restored.
 - Pro URL/localStorage bypass regression has been removed.
 - Pro UI price has been restored to $7.97/month.
