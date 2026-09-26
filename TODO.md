@@ -11,8 +11,10 @@ Last updated: 2026-09-25
 - [ ] Verify new user can create/update `user_data` and another user cannot read/write it.
 - [ ] Verify cloud data persists across sign-out/sign-in and a second device/browser.
 - [ ] Test authenticated `/api/ai` with Anthropic configured.
-- [ ] Verify free AI user is limited to 3 server-counted calls/day.
-- [ ] Verify Pro/test user bypasses the free AI limit only through server-owned entitlement/test configuration.
+- [ ] Verify Free users stay entirely on local/non-API AI-style tools.
+- [ ] Verify Pro/test users receive 300 server-counted AI credits per month.
+- [ ] Verify one successful AI response deducts one credit and failed responses refund the reservation.
+- [ ] Verify Pro falls back to local mode when monthly credits reach zero.
 - [ ] Verify Stripe environment variables exist in Vercel.
 - [ ] Verify Stripe Price is $7.97/month and matches the UI.
 - [ ] Verify Stripe webhook endpoint + signing secret.
@@ -32,6 +34,9 @@ Last updated: 2026-09-25
 - [ ] Add basic production error monitoring if a free option is available.
 
 ## FUTURE / POST-LAUNCH
+
+- [ ] Evaluate rewarded ads or another opt-in way for users to earn extra AI credits after launch; only add if economics and ad-network policy make sense.
+- [ ] Consider optional paid credit top-ups only after real usage data shows they are needed.
 
 - [ ] Split the large `DailyShine.js` file into smaller tab components.
 - [ ] Prune date-keyed localStorage entries older than the retention window.
