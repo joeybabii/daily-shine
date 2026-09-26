@@ -4562,6 +4562,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
         return;
       }
 
+      trackAIUse(data.creditsRemaining);
       const text = data.content.map(i => i.text || "").join("\n");
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
@@ -4815,6 +4816,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
         return;
       }
 
+      trackAIUse(data.creditsRemaining);
       const text = data.content.map(i => i.text || "").join("\n");
       const clean = text.replace(/```json|```/g, "").trim();
       setLetter(JSON.parse(clean));
