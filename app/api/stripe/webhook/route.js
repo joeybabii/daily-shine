@@ -2,52 +2,63 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
-// Use service role key for webhook (bypasses RLS)
-const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
+const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
   : null;
 
 async function updatePremiumStatus(userId, isPremium, stripeCustomerId = null) {
-  if (!supabaseAdmin) {
-    console.error('Supabase admin client not configured');
+  if (!supabaseAdmin || !userId) {
+    console.error('Supabase admin client or user ID missing');
     return;
   }
 
-  // Get existing user data
-  const { data: existing } = await supabaseAdmin
-    .from('user_data')
-    .select('data')
-    .eq('user_id', userId)
-    .single();
-
-  const currentData = existing?.data || {};
-
-  // Update premium status in the user's data blob
-  const updatedData = {
-    ...currentData,
-    'shine-premium': isPremium,
-    'shine-stripe-customer': stripeCustomerId,
+  const payload = {
+    user_id: userId,
+    is_premium: isPremium,
+    updated_at: new Date().toISOString(),
   };
 
-  await supabaseAdmin
-    .from('user_data')
-    .upsert({
-      user_id: userId,
-      data: updatedData,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'user_id',
-    });
+  if (stripeCustomerId) {
+    payload.stripe_customer_id = stripeCustomerId;
+  }
+
+  const { error } = await supabaseAdmin
+    .from('user_entitlements')
+    .upsert(payload, { onConflict: 'user_id' });
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function findUserByCustomer(stripeCustomerId) {
+  if (!supabaseAdmin || !stripeCustomerId) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('user_entitlements')
+    .select('user_id')
+    .eq('stripe_customer_id', stripeCustomerId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.user_id || null;
+}
+
+async function grantFromCheckout(session) {
+  const userId = session.metadata?.supabase_user_id;
+  if (!userId) return;
+
+  // Do not grant access for an unpaid delayed-payment Checkout session.
+  if (session.payment_status === 'unpaid') return;
+
+  await updatePremiumStatus(userId, true, session.customer);
 }
 
 export async function POST(request) {
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET || !supabaseAdmin) {
+    return NextResponse.json({ error: 'Billing not configured' }, { status: 500 });
   }
 
   const body = await request.text();
@@ -63,46 +74,34 @@ export async function POST(request) {
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const userId = session.metadata?.supabase_user_id;
-        if (userId) {
-          await updatePremiumStatus(userId, true, session.customer);
-        }
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded': {
+        await grantFromCheckout(event.data.object);
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
-        const isActive = ['active', 'trialing'].includes(subscription.status);
-        // Look up user by stripe customer ID
-        if (supabaseAdmin) {
-          const { data: users } = await supabaseAdmin
-            .from('user_data')
-            .select('user_id, data')
-            .filter('data->>shine-stripe-customer', 'eq', subscription.customer);
-          
-          if (users?.[0]) {
-            await updatePremiumStatus(users[0].user_id, isActive, subscription.customer);
-          }
+        const userId = await findUserByCustomer(subscription.customer);
+        if (userId) {
+          const isActive = ['active', 'trialing'].includes(subscription.status);
+          await updatePremiumStatus(userId, isActive, subscription.customer);
         }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
-        if (supabaseAdmin) {
-          const { data: users } = await supabaseAdmin
-            .from('user_data')
-            .select('user_id, data')
-            .filter('data->>shine-stripe-customer', 'eq', subscription.customer);
-          
-          if (users?.[0]) {
-            await updatePremiumStatus(users[0].user_id, false, subscription.customer);
-          }
+        const userId = await findUserByCustomer(subscription.customer);
+        if (userId) {
+          await updatePremiumStatus(userId, false, subscription.customer);
         }
         break;
       }
+
+      case 'checkout.session.async_payment_failed':
+        // No entitlement was granted, so there is nothing to revoke here.
+        break;
     }
   } catch (error) {
     console.error('Webhook handler error:', error);
