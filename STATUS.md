@@ -16,6 +16,8 @@ Installable app: PWA
 
 ## Verified working
 
+- Free-local / 300-credit Pro model is deployed in the production bundle.
+- Production bundle no longer contains the old 3-free-AI / unlimited-AI messaging.
 - Final repaired `main` deployment is READY in Vercel.
 - Production domain returned HTTP 200 after the repair deployment.
 - `/api/ai` and `/api/stripe/verify` resolve as deployed API routes.
