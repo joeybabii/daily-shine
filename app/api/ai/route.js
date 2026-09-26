@@ -57,24 +57,34 @@ export async function POST(request) {
     }
 
     const usageDate = getMonthStart();
-    const { data: currentUsage, error: currentUsageError } = await supabaseAdmin
-      .from('ai_usage')
-      .select('count')
-      .eq('user_id', user.id)
-      .eq('usage_date', usageDate)
-      .maybeSingle();
+    // Reserve one credit atomically before calling Anthropic so parallel
+    // requests cannot exceed the monthly allowance.
+    const { data: usageResult, error: usageError } = await supabaseAdmin
+      .rpc('consume_ai_usage', {
+        p_user_id: user.id,
+        p_usage_date: usageDate,
+        p_limit: PRO_MONTHLY_AI_CREDITS,
+      })
+      .single();
 
-    if (currentUsageError) {
-      console.error('AI usage lookup error:', currentUsageError);
+    if (usageError || !usageResult) {
+      console.error('AI usage consume error:', usageError);
       return NextResponse.json({ fallback: true }, { status: 200 });
     }
 
-    const used = currentUsage?.count || 0;
-    if (used >= PRO_MONTHLY_AI_CREDITS) {
+    if (!usageResult.allowed) {
+      // consume_ai_usage increments before reporting the limit, so refund the
+      // rejected reservation immediately.
+      await supabaseAdmin.rpc('refund_ai_usage', {
+        p_user_id: user.id,
+        p_usage_date: usageDate,
+      });
+
       return NextResponse.json({
         fallback: true,
         limitReached: true,
         creditsRemaining: 0,
+        monthlyCreditLimit: PRO_MONTHLY_AI_CREDITS,
       }, { status: 200 });
     }
 
@@ -98,29 +108,11 @@ export async function POST(request) {
 
     const data = await response.json();
     if (!response.ok) {
-      return NextResponse.json({ fallback: true }, { status: 200 });
-    }
-
-    // Charge one credit only after Anthropic successfully returns a response.
-    const { data: usageResult, error: usageError } = await supabaseAdmin
-      .rpc('consume_ai_usage', {
+      await supabaseAdmin.rpc('refund_ai_usage', {
         p_user_id: user.id,
         p_usage_date: usageDate,
-        p_limit: PRO_MONTHLY_AI_CREDITS,
-      })
-      .single();
-
-    if (usageError || !usageResult) {
-      console.error('AI usage consume error:', usageError);
+      });
       return NextResponse.json({ fallback: true }, { status: 200 });
-    }
-
-    if (!usageResult.allowed) {
-      return NextResponse.json({
-        fallback: true,
-        limitReached: true,
-        creditsRemaining: 0,
-      }, { status: 200 });
     }
 
     return NextResponse.json({
