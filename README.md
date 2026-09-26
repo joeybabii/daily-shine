@@ -64,7 +64,7 @@ Open [http://localhost:3000](http://localhost:3000)
 1. Push this repo to GitHub
 2. Go to [vercel.com](https://vercel.com) and sign in with GitHub
 3. Click **"New Project"** → Import your repo
-4. Add environment variable: `ANTHROPIC_API_KEY` = your key
+4. Add the environment variables listed in `.env.example`
 5. Click **Deploy**
 
 You'll get a live URL like `daily-shine.vercel.app` in ~60 seconds.
@@ -90,16 +90,18 @@ The app works offline and feels like a native app.
 
 ## AI Features
 
-The AI-powered features (Reframe It, Self-Compassion Letter, Weekly Insight) require an [Anthropic API key](https://console.anthropic.com/). The app works perfectly fine without one — those features will simply show a friendly message.
+The AI-powered features (Ask Your Coach, Reframe It, Self-Compassion Letter, Weekly Insight) use Anthropic through the server-side `/api/ai` route. Authenticated free users receive 3 AI calls per day; Pro users have unlimited access. If Anthropic is not configured or unavailable, the UI falls back to local responses.
 
-AI calls are proxied through a server-side API route (`/api/ai`) so your key is never exposed to the browser.
+AI calls are proxied through a server-side API route (`/api/ai`) so the Anthropic key is never exposed to the browser. AI usage and Pro entitlement are enforced server-side.
 
 ## Tech Stack
 
 - **Next.js 14** — React framework
 - **PWA** — Installable, offline-capable
 - **Claude API** — AI-powered features
-- **localStorage** — Persistent data (moods, journal, streaks)
+- **Supabase** — Authentication + cloud-synced user data
+- **localStorage** — Offline/local-first cache for app data
+- **Stripe** — Pro subscriptions
 - **CSS-in-JS** — Zero dependencies, no build tools for styling
 
 ## License
