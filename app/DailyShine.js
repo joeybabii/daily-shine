@@ -1785,20 +1785,20 @@ export default function DailyShine({ user }) {
 
   const THEMES = {
     warmPeach: {
-      name: "Warm Peach", emoji: "☀️",
-      bg: "linear-gradient(160deg, #FFF8F0 0%, #FEF0E4 30%, #F5EBE0 60%, #EDE4DA 100%)",
-      cardBg: "rgba(255,255,255,0.65)", cardBorder: "rgba(212,165,116,0.15)",
-      text: "#3D3028", textMuted: "#8B7355", accent: "#E8976B", accentAlt: "#C4764A",
-      accentBg: "rgba(232,151,107,0.15)", accentBgSubtle: "rgba(232,151,107,0.08)",
-      moodBorder: "rgba(212,165,116,0.2)", moodBg: "rgba(255,255,255,0.5)", moodHover: "rgba(255,255,255,0.8)",
-      navBg: "rgba(255,248,240,0.9)", navBorder: "rgba(212,165,116,0.15)",
-      orb1: "rgba(232,151,107,0.12)", orb2: "rgba(196,168,130,0.1)",
-      dotColor1: "#D4A574", dotColor2: "#C4956A", dotColor3: "#B8886A",
-      tabActive: "#C4764A", tabInactive: "#8B7355",
-      syncBg: "rgba(130,180,130,0.1)", syncText: "#5A8A5A",
-      avatarBg: "linear-gradient(135deg, rgba(232,151,107,0.15), rgba(232,151,107,0.05))",
-      avatarBorder: "#E8976B", avatarGradient: "linear-gradient(135deg, #E8976B, #D4764A)",
-      upgradeBg: "rgba(232,151,107,0.12)", signOutBorder: "rgba(200,100,100,0.2)", signOutText: "#A06050",
+      name: "Champagne", emoji: "✦",
+      bg: "linear-gradient(155deg, #FBF8F2 0%, #F5EFE5 34%, #EEE5D8 68%, #E7DAC9 100%)",
+      cardBg: "rgba(255,255,255,0.72)", cardBorder: "rgba(116,88,58,0.12)",
+      text: "#2C241D", textMuted: "#76695C", accent: "#B58A52", accentAlt: "#8E6840",
+      accentBg: "rgba(181,138,82,0.14)", accentBgSubtle: "rgba(181,138,82,0.07)",
+      moodBorder: "rgba(142,104,64,0.18)", moodBg: "rgba(255,255,255,0.58)", moodHover: "rgba(255,255,255,0.88)",
+      navBg: "rgba(250,247,241,0.91)", navBorder: "rgba(116,88,58,0.11)",
+      orb1: "rgba(181,138,82,0.08)", orb2: "rgba(112,83,55,0.06)",
+      dotColor1: "#C3A476", dotColor2: "#A98253", dotColor3: "#8E6840",
+      tabActive: "#8E6840", tabInactive: "#817466",
+      syncBg: "rgba(91,132,105,0.10)", syncText: "#587663",
+      avatarBg: "linear-gradient(135deg, rgba(181,138,82,0.12), rgba(142,104,64,0.05))",
+      avatarBorder: "#B58A52", avatarGradient: "linear-gradient(135deg, #C6A16A, #8E6840)",
+      upgradeBg: "rgba(181,138,82,0.10)", signOutBorder: "rgba(132,77,68,0.17)", signOutText: "#8B5A50",
       isDark: false,
     },
     arcticGlass: {
@@ -2420,16 +2420,18 @@ Respond with ONLY a JSON object (no markdown, no backticks):
         
         .card {
           background: ${th.cardBg};
-          backdrop-filter: blur(20px);
+          backdrop-filter: blur(24px) saturate(115%);
+          -webkit-backdrop-filter: blur(24px) saturate(115%);
           border: 1px solid ${th.cardBorder};
-          border-radius: 24px;
+          border-radius: 22px;
           padding: 28px;
+          box-shadow: ${th.isDark ? '0 18px 48px rgba(0,0,0,0.18)' : '0 16px 42px rgba(68,49,31,0.055), inset 0 1px 0 rgba(255,255,255,0.7)'};
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         .card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 40px ${th.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(180,140,100,0.1)'};
+          transform: translateY(-1px);
+          box-shadow: ${th.isDark ? '0 20px 52px rgba(0,0,0,0.22)' : '0 20px 50px rgba(68,49,31,0.075), inset 0 1px 0 rgba(255,255,255,0.8)'};
         }
         
         .tab-btn {
@@ -4049,9 +4051,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             padding: 20, animation: "fadeUp 0.3s ease-out"
           }}>
             <div style={{
-              background: "linear-gradient(160deg, #FFF8F0, #FEF0E4)",
-              borderRadius: 28, padding: 32, maxWidth: 380, width: "100%",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+              background: "linear-gradient(160deg, #FBF8F2, #F2EADF)",
+              border: "1px solid rgba(116,88,58,0.12)",
+              borderRadius: 26, padding: 32, maxWidth: 380, width: "100%",
+              boxShadow: "0 24px 70px rgba(55,39,25,0.18)",
               animation: "fadeUp 0.4s ease-out",
               textAlign: "center"
             }}>
@@ -4067,7 +4070,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
               <h2 style={{
                 fontSize: 22, color: th.text, fontWeight: 400,
-                marginBottom: 10, fontFamily: "'Playfair Display', serif"
+                marginBottom: 10, fontFamily: "'Instrument Serif', Georgia, serif"
               }}>
                 {slide.title}
               </h2>
