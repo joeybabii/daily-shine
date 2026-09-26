@@ -1786,19 +1786,19 @@ export default function DailyShine({ user }) {
   const THEMES = {
     warmPeach: {
       name: "Champagne", emoji: "✦",
-      bg: "linear-gradient(155deg, #FBF8F2 0%, #F5EFE5 34%, #EEE5D8 68%, #E7DAC9 100%)",
-      cardBg: "rgba(255,255,255,0.72)", cardBorder: "rgba(116,88,58,0.12)",
-      text: "#2C241D", textMuted: "#76695C", accent: "#B58A52", accentAlt: "#8E6840",
-      accentBg: "rgba(181,138,82,0.14)", accentBgSubtle: "rgba(181,138,82,0.07)",
-      moodBorder: "rgba(142,104,64,0.18)", moodBg: "rgba(255,255,255,0.58)", moodHover: "rgba(255,255,255,0.88)",
-      navBg: "rgba(250,247,241,0.91)", navBorder: "rgba(116,88,58,0.11)",
-      orb1: "rgba(181,138,82,0.08)", orb2: "rgba(112,83,55,0.06)",
-      dotColor1: "#C3A476", dotColor2: "#A98253", dotColor3: "#8E6840",
-      tabActive: "#8E6840", tabInactive: "#817466",
-      syncBg: "rgba(91,132,105,0.10)", syncText: "#587663",
-      avatarBg: "linear-gradient(135deg, rgba(181,138,82,0.12), rgba(142,104,64,0.05))",
-      avatarBorder: "#B58A52", avatarGradient: "linear-gradient(135deg, #C6A16A, #8E6840)",
-      upgradeBg: "rgba(181,138,82,0.10)", signOutBorder: "rgba(132,77,68,0.17)", signOutText: "#8B5A50",
+      bg: "linear-gradient(155deg, #F8F3EA 0%, #EFE6D8 42%, #E5D6C4 100%)",
+      cardBg: "rgba(255,252,247,0.92)", cardBorder: "rgba(57,42,29,0.10)",
+      text: "#261F19", textMuted: "#75695E", accent: "#B4894E", accentAlt: "#8B6539",
+      accentBg: "rgba(180,137,78,0.16)", accentBgSubtle: "rgba(180,137,78,0.08)",
+      moodBorder: "rgba(139,101,57,0.22)", moodBg: "rgba(255,252,247,0.82)", moodHover: "#FFFDF9",
+      navBg: "rgba(38,31,25,0.96)", navBorder: "rgba(231,201,148,0.18)",
+      orb1: "rgba(180,137,78,0.10)", orb2: "rgba(89,64,42,0.07)",
+      dotColor1: "#C8A46E", dotColor2: "#A77C45", dotColor3: "#876037",
+      tabActive: "#F0D29B", tabInactive: "#BEB1A3",
+      syncBg: "rgba(89,126,101,0.11)", syncText: "#57715F",
+      avatarBg: "linear-gradient(135deg, rgba(180,137,78,0.16), rgba(139,101,57,0.07))",
+      avatarBorder: "#B4894E", avatarGradient: "linear-gradient(135deg, #D1AE73, #8B6539)",
+      upgradeBg: "rgba(180,137,78,0.12)", signOutBorder: "rgba(132,77,68,0.17)", signOutText: "#8B5A50",
       isDark: false,
     },
     arcticGlass: {
@@ -2524,12 +2524,17 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 10,
-            background: th.accentBgSubtle, padding: "8px 20px",
-            borderRadius: 100, marginBottom: 16,
-            fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-            color: th.accent, fontWeight: 500, letterSpacing: "0.5px"
+            background: activeTheme === "warmPeach" ? "#261F19" : th.accentBgSubtle,
+            padding: activeTheme === "warmPeach" ? "9px 18px" : "8px 20px",
+            border: activeTheme === "warmPeach" ? "1px solid rgba(240,210,155,0.18)" : "none",
+            boxShadow: activeTheme === "warmPeach" ? "0 10px 28px rgba(38,31,25,0.14)" : "none",
+            borderRadius: 100, marginBottom: 18,
+            fontSize: activeTheme === "warmPeach" ? 11 : 13, fontFamily: "'DM Sans', sans-serif",
+            color: activeTheme === "warmPeach" ? "#F0D29B" : th.accent,
+            fontWeight: 600, letterSpacing: activeTheme === "warmPeach" ? "1.8px" : "0.5px",
+            textTransform: activeTheme === "warmPeach" ? "uppercase" : "none"
           }}>
-            ☀️ Daily Shine
+            {activeTheme === "warmPeach" ? "✦ DAILY SHINE" : "☀️ Daily Shine"}
             {streak > 0 && (
               <span style={{
                 background: `linear-gradient(135deg, ${th.accent}, ${th.accentAlt})`,
@@ -2542,8 +2547,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
             )}
           </div>
           <h1 style={{
-            fontSize: 36, fontWeight: 400, color: th.text,
-            lineHeight: 1.2, marginBottom: 6
+            fontSize: activeTheme === "warmPeach" ? 42 : 36,
+            fontWeight: 400, color: th.text,
+            lineHeight: 1.08, marginBottom: 8,
+            letterSpacing: activeTheme === "warmPeach" ? "-0.8px" : "normal"
           }}>
             {greetingName()} ✨
           </h1>
@@ -2580,19 +2587,26 @@ Respond with ONLY a JSON object (no markdown, no backticks):
 
             {/* Affirmation Card */}
             <div className="card" style={{
-              background: th.isDark ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg, rgba(232,151,107,0.12) 0%, rgba(255,255,255,0.7) 100%)",
-              textAlign: "center", padding: "36px 32px",
+              background: activeTheme === "warmPeach"
+                ? "linear-gradient(145deg, #241E18 0%, #342A22 55%, #403328 100%)"
+                : (th.isDark ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg, rgba(232,151,107,0.12) 0%, rgba(255,255,255,0.7) 100%)"),
+              border: activeTheme === "warmPeach" ? "1px solid rgba(230,196,137,0.20)" : undefined,
+              boxShadow: activeTheme === "warmPeach" ? "0 22px 55px rgba(38,31,25,0.20)" : undefined,
+              textAlign: "center", padding: "40px 32px",
               animation: "fadeUp 0.6s ease-out"
             }}>
               <div style={{
                 fontSize: 11, fontFamily: "'DM Sans', sans-serif",
                 textTransform: "uppercase", letterSpacing: 2,
-                color: th.accent, marginBottom: 16, fontWeight: 600
+                color: activeTheme === "warmPeach" ? "#DDBA7D" : th.accent,
+                marginBottom: 18, fontWeight: 600
               }}>
                 Today's Affirmation
               </div>
               <p style={{
-                fontSize: 22, lineHeight: 1.5, color: th.text,
+                fontSize: activeTheme === "warmPeach" ? 25 : 22,
+                lineHeight: 1.48,
+                color: activeTheme === "warmPeach" ? "#FFF9EF" : th.text,
                 fontStyle: "italic", fontWeight: 400
               }}>
                 "{todayAffirmation}"
@@ -4236,8 +4250,10 @@ Respond with ONLY a JSON object (no markdown, no backticks):
       {/* Bottom Navigation */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
-        background: th.navBg, backdropFilter: "blur(20px)",
+        background: th.navBg, backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
         borderTop: `1px solid ${th.navBorder}`,
+        boxShadow: activeTheme === "warmPeach" ? "0 -14px 38px rgba(38,31,25,0.16)" : "none",
         padding: "8px 0 max(8px, env(safe-area-inset-bottom))",
         zIndex: 10
       }}>
