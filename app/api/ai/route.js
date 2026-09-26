@@ -6,6 +6,10 @@ const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_
   : null;
 
 const FREE_AI_LIMIT = 3;
+const PRO_TEST_EMAILS = (process.env.PRO_TEST_EMAILS || '')
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
 
 export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -33,14 +37,15 @@ export async function POST(request) {
       return NextResponse.json({ fallback: true }, { status: 200 });
     }
 
-    // Pro status is verified server-side from cloud data.
-    const { data: userData } = await supabaseAdmin
-      .from('user_data')
-      .select('data')
+    // Pro status comes only from server-owned entitlements.
+    const { data: entitlement } = await supabaseAdmin
+      .from('user_entitlements')
+      .select('is_premium')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    const isPremium = !!userData?.data?.['shine-premium'];
+    const isTestUser = !!user.email && PRO_TEST_EMAILS.includes(user.email.toLowerCase());
+    const isPremium = isTestUser || !!entitlement?.is_premium;
 
     if (!isPremium) {
       const usageDate = new Date().toISOString().slice(0, 10);
