@@ -53,7 +53,7 @@ export async function saveUserData(userId, userData) {
 // Migrate localStorage data to cloud on first sign-in
 export function getLocalData() {
   const keys = [
-    'shine-moods', 'shine-streak', 'shine-journal', 'shine-premium',
+    'shine-moods', 'shine-streak', 'shine-journal',
   ];
   
   const data = {};
