@@ -22,8 +22,8 @@ Last updated: 2026-09-25
 - [ ] Run Stripe test subscription: checkout -> webhook -> Pro entitlement.
 - [ ] Verify subscription cancellation/update revokes or preserves access correctly.
 - [ ] Verify Customer Portal only opens for the authenticated user's Stripe customer.
-- [ ] Test full core flow on Joey's iPhone in Safari.
-- [ ] Test Add to Home Screen / standalone PWA behavior.
+- [x] Test full core Free-version flow on Joey's iPhone in Safari.
+- [x] Test Add to Home Screen / standalone PWA behavior.
 - [ ] Fix any launch-blocking issues found above.
 
 ## P1 — Reliability before/at launch
