@@ -6,7 +6,7 @@
 
 html, body {
   font-family: 'Instrument Serif', 'Georgia', serif;
-  background: linear-gradient(160deg, #FFF8F0 0%, #FEF0E4 30%, #F5EBE0 60%, #EDE4DA 100%);
+  background: linear-gradient(155deg, #FBF8F2 0%, #F5EFE5 34%, #EEE5D8 68%, #E7DAC9 100%);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -32,8 +32,8 @@ body {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 20px rgba(232,151,107,0.15); }
-  50% { box-shadow: 0 0 40px rgba(232,151,107,0.3); }
+  0%, 100% { box-shadow: 0 0 20px rgba(181,138,82,0.12); }
+  50% { box-shadow: 0 0 40px rgba(181,138,82,0.22); }
 }
 
 @keyframes breathe {
@@ -65,11 +65,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(212,165,116,0.2);
+  background: rgba(181,138,82,0.20);
   border-radius: 3px;
 }
 
 /* Selection color */
 ::selection {
-  background: rgba(232,151,107,0.2);
+  background: rgba(181,138,82,0.18);
 }
