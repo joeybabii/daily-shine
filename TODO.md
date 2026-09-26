@@ -4,8 +4,8 @@ Last updated: 2026-09-25
 
 ## P0 — Launch blockers
 
-- [ ] Confirm latest `main` commit deploys successfully to Vercel.
-- [ ] Smoke-test production domain after deployment.
+- [x] Confirm latest `main` commit deploys successfully to Vercel.
+- [x] Smoke-test production domain after deployment.
 - [ ] Test email sign-up, confirmation, sign-in, sign-out, and password reset.
 - [ ] Test Google OAuth redirect and return flow.
 - [ ] Verify new user can create/update `user_data` and another user cannot read/write it.
