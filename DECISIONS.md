@@ -7,7 +7,9 @@ Last updated: 2026-09-25
 - Daily Shine is the current ACTIVE BUILD.
 - Finish and ship the existing product before adding new features or redesigning working screens.
 - Current Pro display price: **$7.97/month**.
-- Free users receive **3 AI uses per day**; Pro receives unlimited AI access.
+- Free users receive the local/non-API versions of AI-style tools, so Free usage does not incur Anthropic API cost.
+- Pro receives **300 AI credits per month**; one successful AI response costs one credit.
+- Failed AI generations refund the reserved credit.
 - The app remains a web/PWA release path for the current launch.
 
 ## Architecture
@@ -31,5 +33,7 @@ Last updated: 2026-09-25
 - AI calls use Claude Haiku by default to keep inference cost low.
 
 ## Deferred
+
+- Rewarded ads / earn-extra-credit mechanics are post-launch. Do not add an ad SDK before the core subscription flow is shipped and real usage economics are known.
 
 - Large component refactors, design-system cleanup, performance refactors, and new feature ideas are post-launch unless they become a verified launch blocker.
