@@ -50,7 +50,6 @@ Installable app: PWA
 - Live Stripe checkout cannot yet be verified through the connected Stripe app; Stripe account connectivity is currently unavailable in ChatGPT.
 - Stripe product/price ID, webhook endpoint, webhook secret, and production/test mode alignment still need live verification.
 - Anthropic environment configuration and a real authenticated AI response still need live verification.
-- iPhone Safari/PWA install and the complete core flow still need device testing.
 - The current cloud sync uses a 2-second debounce; very recent writes can be lost if the app closes immediately after an edit.
 - Next.js reports non-blocking metadata warnings for `themeColor` and `viewport` placement.
 
@@ -59,16 +58,16 @@ Installable app: PWA
 1. Supabase auth + cloud persistence pass end-to-end tests.
 2. Anthropic AI route returns real responses for an authenticated user and server-side limits work.
 3. Stripe checkout -> webhook -> entitlement -> portal flow passes in a Stripe test environment.
-4. Core app flow is tested on iPhone Safari and as an installed PWA.
+4. Core Free-version flow has passed on iPhone Safari and as an installed PWA.
 5. Any launch-blocking mobile/runtime bugs found in those tests are fixed.
 6. Production billing configuration is confirmed before accepting real payments.
 
 ## Biggest blocker
 
-End-to-end external-service verification, especially Stripe billing configuration. The repaired main branch is deployed and serving successfully, but auth, AI, billing, and iPhone flows still need real user-path tests.
+End-to-end external-service verification, especially Stripe billing configuration. The Free iPhone/PWA flow is verified; paid checkout, webhook entitlement, portal, and authenticated Pro AI still need real user-path tests.
 
 ## Next three actions
 
-1. Test Supabase auth, cloud sync, and authenticated AI end to end.
-2. Verify Stripe test checkout/webhooks/portal.
-3. Run the complete iPhone Safari/PWA launch test.
+1. Verify Stripe sandbox checkout -> webhook -> Pro entitlement -> Customer Portal.
+2. Test authenticated Pro AI and 300-credit accounting end to end.
+3. Finish remaining Supabase auth/cloud-sync edge-case tests and fix any launch blockers found.
