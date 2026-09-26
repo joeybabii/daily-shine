@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./lib/AuthProvider";
 import { loadUserData, saveUserData, getLocalData, writeToLocal } from "./lib/cloudStorage";
+import { supabase } from "./lib/supabase";
 
 // Storage helpers — always writes to localStorage, also syncs to cloud when logged in
 const storage = {
@@ -39,6 +40,29 @@ const storage = {
     } catch { return null; }
   }
 };
+
+
+async function fetchAI(payload) {
+  if (!supabase) return { fallback: true };
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { fallback: true };
+
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return await response.json();
+  } catch {
+    return { fallback: true };
+  }
+}
 
 const AFFIRMATIONS = [
   "You are exactly where you need to be right now.",
@@ -2274,10 +2298,7 @@ export default function DailyShine({ user }) {
     };
 
     try {
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 500,
           system: `You're a warm wellbeing coach analyzing a user's mood and journal data from their positivity app. Give them a personalized weekly insight.
@@ -2290,9 +2311,7 @@ Respond with ONLY a JSON object (no markdown, no backticks):
           messages: [
             { role: "user", content: `My mood this week: ${moodSummary || "No moods logged yet"}. Journal entries: ${recentEntries || "None yet"}. Streak: ${streak} days.` }
           ]
-        })
-      });
-      const data = await response.json();
+        });
       
       if (data.fallback) {
         const local = getLocalInsight();
@@ -4521,10 +4540,7 @@ function ReframeCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade, t
 
     try {
       await trackAIUse();
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 500,
           system: `You are a warm, compassionate cognitive reframing coach inside a daily positivity app called Daily Shine. The user will share a negative thought, and your job is to help them see it from a healthier perspective.
@@ -4541,10 +4557,7 @@ Be warm but not cheesy. Be real. Sound like a wise friend, not a therapist robot
           messages: [
             { role: "user", content: negativeThought.trim() }
           ]
-        })
-      });
-
-      const data = await response.json();
+        });
       
       // If API returned fallback signal, use local reframe
       if (data.fallback) {
@@ -4784,10 +4797,7 @@ function CompassionCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade
 
     try {
       await trackAIUse();
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 500,
           system: `You are a self-compassion coach inside a positivity app. The user will describe something they're struggling with or feeling bad about. Write them a short, warm letter FROM their most compassionate self TO them.
@@ -4804,10 +4814,7 @@ Sound like a wise, warm friend who knows them deeply. No toxic positivity.`,
           messages: [
             { role: "user", content: situation.trim() }
           ]
-        })
-      });
-
-      const data = await response.json();
+        });
       
       if (data.fallback) {
         setLetter(getLocalLetter());
@@ -4999,10 +5006,7 @@ function AskCoachCard({ canUseAI, aiUsesLeft, isPremium, trackAIUse, onUpgrade, 
       }));
       conversationHistory.push({ role: "user", content: userQ });
 
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await fetchAI({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 600,
           system: `You are a warm, wise positivity coach inside an app called Daily Shine. Your job is to respond SPECIFICALLY to exactly what the user just asked or shared — not with generic advice.
@@ -5019,10 +5023,7 @@ Rules:
 - Never diagnose or prescribe medical/psychological treatment
 - Never give generic responses that could apply to anyone — every answer should feel like it was written just for this person`,
           messages: conversationHistory
-        })
-      });
-
-      const data = await response.json();
+        });
       
       if (data.fallback) {
         const local = LOCAL_ANSWERS[Math.floor(Math.random() * LOCAL_ANSWERS.length)];
