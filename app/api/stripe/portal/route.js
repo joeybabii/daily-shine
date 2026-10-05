@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { getAppOrigin, getStripeClient } from '../../../lib/serverConfig';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
   : null;
 
 export async function POST(request) {
-  if (!process.env.STRIPE_SECRET_KEY || !supabaseAdmin) {
+  const stripe = getStripeClient(Stripe);
+  if (!stripe || !supabaseAdmin) {
     return NextResponse.json({ error: 'Billing not configured' }, { status: 500 });
   }
 
@@ -35,7 +36,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No billing customer found' }, { status: 400 });
     }
 
-    const origin = request.headers.get('origin') || 'https://daily-shine-tau.vercel.app';
+    const origin = getAppOrigin();
     const session = await stripe.billingPortal.sessions.create({
       customer: entitlement.stripe_customer_id,
       return_url: origin,

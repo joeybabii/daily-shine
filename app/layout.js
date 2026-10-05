@@ -4,14 +4,6 @@ export const metadata = {
   title: 'Daily Shine — Your Positivity Companion',
   description: 'A daily positivity companion app with affirmations, mood tracking, gratitude journaling, breathing exercises, and AI-powered reframing tools.',
   manifest: '/manifest.json',
-  themeColor: '#E8976B',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -22,6 +14,15 @@ export const metadata = {
     description: 'Affirmations, mood tracking, gratitude, breathing exercises & AI-powered tools to help you be more positive every day.',
     type: 'website',
   },
+};
+
+export const viewport = {
+  themeColor: '#E8976B',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }) {

@@ -2,16 +2,24 @@
   "name": "daily-shine",
   "version": "2.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "npm run test:api",
+    "test:api": "node scripts/smoke-protected-routes.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "next": "^14.2.0",
+    "next": "15.5.24",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "stripe": "^20.3.1"
+  },
+  "overrides": {
+    "postcss": "8.5.29"
   }
 }
