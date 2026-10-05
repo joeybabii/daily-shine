@@ -21,6 +21,11 @@ Daily Shine is the ACTIVE BUILD.
 - `npm test` starts the real app with dummy service configuration and verifies checkout, portal, and entitlement routes reject unauthenticated requests and the webhook rejects an unsigned request.
 - Stripe Checkout and Customer Portal return URLs use the configured app URL instead of trusting the request `Origin` header.
 - Next.js viewport/theme metadata is exported through the supported API and no longer produces build warnings.
+- The Vercel preview for the hardening branch reached READY and served the app, manifest, and service worker with HTTP 200.
+- Stripe sandbox has one active `Daily Shine Pro` recurring price at exactly $7.97 USD per month.
+- The Stripe sandbox webhook endpoint is enabled at the production webhook URL for checkout completion and subscription update/deletion events.
+- Supabase migration `harden_user_data_privileges` is applied: anonymous access is revoked and authenticated users only receive select/insert/update privileges, still restricted to their own row by RLS.
+- Supabase is ACTIVE_HEALTHY with email and Google users present; server-owned entitlement/usage tables remain inaccessible to normal client roles.
 - iPhone Free-version smoke test passed: account flow, core tracking/journaling, local-mode tools, persistence, Pro pricing/credit copy, and Add to Home Screen all appeared to work in Joey's test.
 - Free-local / 300-credit Pro model is deployed in the production bundle.
 - Production bundle no longer contains the old 3-free-AI / unlimited-AI messaging.
@@ -51,11 +56,13 @@ Daily Shine is the ACTIVE BUILD.
 
 ## Known broken / unverified
 
-- Hardening commit `67de2de` is locally verified but has not yet been promoted to the production deployment; production remains on the last verified pre-hardening release.
+- Hardening commits through `bd48636` are verified on a non-production branch/preview but have not yet been promoted to production; production remains on the last verified pre-hardening release.
 - Live Supabase sign-up/sign-in, Google OAuth, password reset, and cloud sync still need end-to-end testing after restore.
-- Live Stripe checkout cannot yet be verified through the connected Stripe app; Stripe account connectivity is currently unavailable in ChatGPT.
-- Stripe product/price ID, webhook endpoint, webhook secret, and production/test mode alignment still need live verification.
-- Anthropic environment configuration and a real authenticated AI response still need live verification.
+- Stripe Customer Portal has no sandbox configuration yet, and the sandbox product description still incorrectly says “Unlimited AI.” Correcting these sandbox billing settings requires explicit billing-change approval.
+- Stripe signing-secret alignment and the full checkout -> webhook -> entitlement -> portal -> cancellation path still need an authenticated end-to-end test.
+- `ANTHROPIC_API_KEY` is not present in Vercel, so real authenticated AI cannot work until a credential is added.
+- Supabase has no `user_data`, `user_entitlements`, or `ai_usage` rows yet, so cross-device sync and credit accounting still lack real user-path evidence.
+- Supabase leaked-password protection is unavailable on the current Free plan; enabling it would require paid-plan approval.
 - The current cloud sync uses a 2-second debounce; very recent writes can be lost if the app closes immediately after an edit.
 
 ## Launch requirements
@@ -73,6 +80,6 @@ End-to-end external-service verification, especially Stripe billing configuratio
 
 ## Next three actions
 
-1. Review and promote the verified hardening commit, then confirm the new Vercel deployment is READY and repeat the public smoke checks.
-2. Verify Stripe sandbox checkout -> signed webhook -> Pro entitlement -> Customer Portal -> cancellation, including the exact $7.97/month price.
-3. Test authenticated Pro AI credit accounting, then finish the remaining Supabase auth/cloud-sync edge-case tests.
+1. Approve creation of the Stripe sandbox Customer Portal configuration and correction of the stale sandbox product copy.
+2. Promote the verified hardening branch, then run checkout -> signed webhook -> Pro entitlement -> Customer Portal -> cancellation.
+3. Add an Anthropic key and test Pro credit accounting, then finish the remaining Supabase auth/cloud-sync edge-case tests.

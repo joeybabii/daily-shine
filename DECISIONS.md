@@ -20,6 +20,7 @@ Last updated: 2026-10-05
 - Use Next.js 15.5.24 with a patched PostCSS 8.5.x override for the current launch; avoid a broader Next.js 16/React migration unless it becomes necessary.
 - Supabase provides authentication and cloud data persistence.
 - `user_data` remains user-owned and writable under RLS for journal/app state.
+- `user_data` grants only authenticated select/insert/update access; anonymous and destructive table privileges are revoked.
 - Paid entitlement must **not** be trusted from localStorage or user-writable `user_data`.
 - Paid entitlement lives in server-owned `user_entitlements`, inaccessible to normal client roles.
 - AI usage enforcement lives server-side in `ai_usage`, not only in localStorage.
@@ -34,6 +35,7 @@ Last updated: 2026-10-05
 
 - Prefer current free tiers and existing services.
 - Supabase is currently on its free plan.
+- Do not upgrade Supabase solely for leaked-password protection without Joey's approval; the feature is limited to paid plans.
 - Do not enable a new paid dependency without Joey's approval.
 - AI calls use Claude Haiku by default to keep inference cost low.
 
