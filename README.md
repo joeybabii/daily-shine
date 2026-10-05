@@ -42,15 +42,15 @@ A beautiful, full-featured positivity web app with daily affirmations, mood trac
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/daily-shine.git
+git clone https://github.com/joeybabii/daily-shine.git
 cd daily-shine
 
 # Install dependencies
-npm install
+npm ci
 
-# (Optional) Add your Anthropic API key for AI features
+# Configure the services you want to use
 cp .env.example .env.local
-# Edit .env.local and add your key
+# Keep real keys in .env.local or the deployment environment, never in Git
 
 # Run locally
 npm run dev
@@ -90,13 +90,28 @@ The app works offline and feels like a native app.
 
 ## AI Features
 
-The AI-powered features (Ask Your Coach, Reframe It, Self-Compassion Letter, Weekly Insight) use Anthropic through the server-side `/api/ai` route. Authenticated free users receive 3 AI calls per day; Pro users have unlimited access. If Anthropic is not configured or unavailable, the UI falls back to local responses.
+Free accounts use Daily Shine's local/non-API tool responses, so Free usage does not incur Anthropic cost. Pro is **$7.97/month** and includes **300 server-counted AI credits each month**. One successful Anthropic response consumes one credit; failed generations refund the reserved credit.
 
-AI calls are proxied through a server-side API route (`/api/ai`) so the Anthropic key is never exposed to the browser. AI usage and Pro entitlement are enforced server-side.
+AI calls are proxied through the authenticated server-side `/api/ai` route so the Anthropic key is never exposed to the browser. AI usage and paid entitlement are enforced in server-owned Supabase records. If AI is unavailable or the account cannot use a credit, the client falls back to the local response.
+
+## Verification
+
+```bash
+# Protected Stripe-route smoke tests (uses local dummy configuration)
+npm test
+
+# Production build; succeeds even when service secrets are absent
+npm run build
+
+# Dependency security report
+npm audit
+```
+
+Live Stripe, Anthropic, and Supabase flows still require their real sandbox credentials and must be verified separately before launch.
 
 ## Tech Stack
 
-- **Next.js 14** — React framework
+- **Next.js 15** — React framework
 - **PWA** — Installable, offline-capable
 - **Claude API** — AI-powered features
 - **Supabase** — Authentication + cloud-synced user data

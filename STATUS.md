@@ -1,21 +1,26 @@
 # Daily Shine — Status
 
-Last verified: 2026-09-25
+Last verified: 2026-10-05
 
 ## Current state
 
 Daily Shine is the ACTIVE BUILD.
 
-Repository: https://github.com/joeybabii/daily-shine  
-Production domain: https://daily-shine-tau.vercel.app  
-Framework: Next.js 14 / React 18  
-Database + Auth: Supabase  
-Billing: Stripe subscriptions  
-AI: Anthropic Claude  
-Installable app: PWA
+- Repository: https://github.com/joeybabii/daily-shine
+- Production domain: https://daily-shine-tau.vercel.app
+- Framework: Next.js 15.5.24 / React 18
+- Database + Auth: Supabase
+- Billing: Stripe subscriptions
+- AI: Anthropic Claude
+- Installable app: PWA
 
 ## Verified working
 
+- Local hardening commit `67de2de` upgrades Next.js to 15.5.24, applies patched transitive dependencies, and produces an `npm audit` result of zero vulnerabilities.
+- A clean production build succeeds with service environment variables absent; missing Stripe configuration is now handled by the API routes instead of crashing the build.
+- `npm test` starts the real app with dummy service configuration and verifies checkout, portal, and entitlement routes reject unauthenticated requests and the webhook rejects an unsigned request.
+- Stripe Checkout and Customer Portal return URLs use the configured app URL instead of trusting the request `Origin` header.
+- Next.js viewport/theme metadata is exported through the supported API and no longer produces build warnings.
 - iPhone Free-version smoke test passed: account flow, core tracking/journaling, local-mode tools, persistence, Pro pricing/credit copy, and Add to Home Screen all appeared to work in Joey's test.
 - Free-local / 300-credit Pro model is deployed in the production bundle.
 - Production bundle no longer contains the old 3-free-AI / unlimited-AI messaging.
@@ -25,7 +30,7 @@ Installable app: PWA
 - No Vercel runtime errors were reported in the verification window.
 - Repository is connected to Vercel and production deployments build from `main`.
 - Latest previously deployed production build served HTTP 200 at the production domain.
-- Next.js production build compiles successfully on Vercel.
+- The currently deployed production build compiles and serves successfully on Vercel.
 - PWA manifest, icons, and service worker are present.
 - Core app UI and feature code exist for Today, Tools, Learn, Evening, and Progress.
 - Supabase project `daily-shine` has been restored and is ACTIVE_HEALTHY.
@@ -46,12 +51,12 @@ Installable app: PWA
 
 ## Known broken / unverified
 
+- Hardening commit `67de2de` is locally verified but has not yet been promoted to the production deployment; production remains on the last verified pre-hardening release.
 - Live Supabase sign-up/sign-in, Google OAuth, password reset, and cloud sync still need end-to-end testing after restore.
 - Live Stripe checkout cannot yet be verified through the connected Stripe app; Stripe account connectivity is currently unavailable in ChatGPT.
 - Stripe product/price ID, webhook endpoint, webhook secret, and production/test mode alignment still need live verification.
 - Anthropic environment configuration and a real authenticated AI response still need live verification.
 - The current cloud sync uses a 2-second debounce; very recent writes can be lost if the app closes immediately after an edit.
-- Next.js reports non-blocking metadata warnings for `themeColor` and `viewport` placement.
 
 ## Launch requirements
 
@@ -68,6 +73,6 @@ End-to-end external-service verification, especially Stripe billing configuratio
 
 ## Next three actions
 
-1. Verify Stripe sandbox checkout -> webhook -> Pro entitlement -> Customer Portal.
-2. Test authenticated Pro AI and 300-credit accounting end to end.
-3. Finish remaining Supabase auth/cloud-sync edge-case tests and fix any launch blockers found.
+1. Review and promote the verified hardening commit, then confirm the new Vercel deployment is READY and repeat the public smoke checks.
+2. Verify Stripe sandbox checkout -> signed webhook -> Pro entitlement -> Customer Portal -> cancellation, including the exact $7.97/month price.
+3. Test authenticated Pro AI credit accounting, then finish the remaining Supabase auth/cloud-sync edge-case tests.

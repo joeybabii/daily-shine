@@ -1,6 +1,6 @@
 # Daily Shine — Decisions
 
-Last updated: 2026-09-25
+Last updated: 2026-10-05
 
 ## Product / release
 
@@ -16,6 +16,8 @@ Last updated: 2026-09-25
 
 - GitHub repository `joeybabii/daily-shine` is the code source of truth.
 - Vercel is the deployment platform.
+- The supported runtime baseline is Node.js 20.9 or newer.
+- Use Next.js 15.5.24 with a patched PostCSS 8.5.x override for the current launch; avoid a broader Next.js 16/React migration unless it becomes necessary.
 - Supabase provides authentication and cloud data persistence.
 - `user_data` remains user-owned and writable under RLS for journal/app state.
 - Paid entitlement must **not** be trusted from localStorage or user-writable `user_data`.
@@ -23,6 +25,9 @@ Last updated: 2026-09-25
 - AI usage enforcement lives server-side in `ai_usage`, not only in localStorage.
 - AI and billing API requests must authenticate the Supabase access token and derive user identity server-side.
 - Stripe webhook signature verification is mandatory and is the authority that changes paid entitlement.
+- Stripe clients are created only inside configured requests so missing secrets fail gracefully and never break the production build.
+- Stripe return URLs come from `NEXT_PUBLIC_APP_URL` (with the production domain as a fallback), never from an untrusted request header.
+- Protected-route smoke tests use Node.js and the existing Next.js runtime; no separate test framework is required for the launch baseline.
 - Secrets stay in environment configuration and never in source control.
 
 ## Cost

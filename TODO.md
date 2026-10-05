@@ -1,9 +1,13 @@
 # Daily Shine — TODO
 
-Last updated: 2026-09-25
+Last updated: 2026-10-05
 
 ## P0 — Launch blockers
 
+- [x] Upgrade Next.js from vulnerable 14.2.35 to patched 15.5.24 and clear the dependency audit.
+- [x] Make the production build succeed without Stripe or other service secrets present.
+- [x] Stop trusting the request `Origin` header for Stripe return URLs.
+- [ ] Promote hardening commit `67de2de` and verify the resulting Vercel production deployment.
 - [x] Credit model code is deployed: Free stays local-only; Pro has 300 monthly AI credits.
 - [x] Confirm latest `main` commit deploys successfully to Vercel.
 - [x] Smoke-test production domain after deployment.
@@ -16,7 +20,7 @@ Last updated: 2026-09-25
 - [ ] Verify Pro/test users receive 300 server-counted AI credits per month.
 - [ ] Verify one successful AI response deducts one credit and failed responses refund the reservation.
 - [ ] Verify Pro falls back to local mode when monthly credits reach zero.
-- [ ] Verify Stripe environment variables exist in Vercel.
+- [x] Verify Stripe/Supabase environment configuration passes the deployed route configuration gates.
 - [ ] Verify Stripe Price is $7.97/month and matches the UI.
 - [ ] Verify Stripe webhook endpoint + signing secret.
 - [ ] Run Stripe test subscription: checkout -> webhook -> Pro entitlement.
@@ -29,8 +33,9 @@ Last updated: 2026-09-25
 ## P1 — Reliability before/at launch
 
 - [ ] Flush pending cloud sync when the app is backgrounded/closed so the 2-second debounce cannot lose the last edit.
-- [ ] Add a small automated smoke test for auth-protected API routes.
-- [ ] Move Next.js `viewport` / `themeColor` to the supported viewport export.
+- [x] Add a small automated smoke test for auth-protected Stripe API routes.
+- [x] Move Next.js `viewport` / `themeColor` to the supported viewport export.
+- [x] Correct README setup, Free/Pro pricing, and AI-credit documentation.
 - [ ] Confirm service-worker offline behavior on iPhone after a production update.
 - [ ] Add basic production error monitoring if a free option is available.
 
