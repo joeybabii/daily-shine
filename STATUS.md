@@ -1,6 +1,6 @@
 # Daily Shine — Status
 
-Last verified: 2026-10-05
+Last verified: 2026-10-06
 
 ## Current state
 
@@ -24,8 +24,11 @@ Daily Shine is the ACTIVE BUILD.
 - The Vercel preview for the hardening branch reached READY and served the app, manifest, and service worker with HTTP 200.
 - Stripe sandbox has one active `Daily Shine Pro` recurring price at exactly $7.97 USD per month.
 - The Stripe sandbox webhook endpoint is enabled at the production webhook URL for checkout completion and subscription update/deletion events.
+- The Stripe sandbox Customer Portal configuration is active and is the account default, with invoice history, payment-method updates, customer name/email updates, and cancellation at period end enabled.
+- The Stripe sandbox `Daily Shine Pro` product description now says “300 AI credits/month.”
 - Supabase migration `harden_user_data_privileges` is applied: anonymous access is revoked and authenticated users only receive select/insert/update privileges, still restricted to their own row by RLS.
 - Supabase is ACTIVE_HEALTHY with email and Google users present; server-owned entitlement/usage tables remain inaccessible to normal client roles.
+- Supabase Auth Site URL is `https://daily-shine-tau.vercel.app`; redirect URLs allow the production app, Vercel hardening previews, and `http://localhost:3000/**` for local development.
 - iPhone Free-version smoke test passed: account flow, core tracking/journaling, local-mode tools, persistence, Pro pricing/credit copy, and Add to Home Screen all appeared to work in Joey's test.
 - Free-local / 300-credit Pro model is deployed in the production bundle.
 - Production bundle no longer contains the old 3-free-AI / unlimited-AI messaging.
@@ -56,12 +59,13 @@ Daily Shine is the ACTIVE BUILD.
 
 ## Known broken / unverified
 
-- Hardening commits through `bd48636` are verified on a non-production branch/preview but have not yet been promoted to production; production remains on the last verified pre-hardening release.
-- Live Supabase sign-up/sign-in, Google OAuth, password reset, and cloud sync still need end-to-end testing after restore.
-- Stripe Customer Portal has no sandbox configuration yet, and the sandbox product description still incorrectly says “Unlimited AI.” Correcting these sandbox billing settings requires explicit billing-change approval.
+- Hardening commits through `00e5bd1` are verified on a non-production branch/preview but have not yet been promoted to production; production remains on the last verified pre-hardening release.
+- Google OAuth successfully authenticated during Safari testing but fell back to the former `http://localhost:3000` Site URL because the preview origin was not allowlisted. The hosted URL configuration is corrected, but Google OAuth and password-reset return behavior still need an end-to-end test on the protected hardening preview.
+- The OAuth session whose URL fragment was exposed during testing must be signed out/revoked after verification and must not be reused.
+- The Customer Portal configuration and product copy are corrected, but a real portal session is still unverified because the sandbox has no completed customer/subscription or Supabase entitlement row.
 - Stripe signing-secret alignment and the full checkout -> webhook -> entitlement -> portal -> cancellation path still need an authenticated end-to-end test.
 - `ANTHROPIC_API_KEY` is not present in Vercel, so real authenticated AI cannot work until a credential is added.
-- Supabase has no `user_data`, `user_entitlements`, or `ai_usage` rows yet, so cross-device sync and credit accounting still lack real user-path evidence.
+- Supabase has persisted `user_data` rows, but `user_entitlements` and `ai_usage` remain empty, so paid entitlement and credit accounting still lack real user-path evidence.
 - Supabase leaked-password protection is unavailable on the current Free plan; enabling it would require paid-plan approval.
 - The current cloud sync uses a 2-second debounce; very recent writes can be lost if the app closes immediately after an edit.
 
@@ -76,10 +80,10 @@ Daily Shine is the ACTIVE BUILD.
 
 ## Biggest blocker
 
-End-to-end external-service verification, especially Stripe billing configuration. The Free iPhone/PWA flow is verified; paid checkout, webhook entitlement, portal, and authenticated Pro AI still need real user-path tests.
+Authenticated preview verification. Supabase URL configuration is corrected, but Google OAuth and password-reset return behavior must pass on the Vercel hardening preview before the paid Stripe flow and production promotion.
 
 ## Next three actions
 
-1. Approve creation of the Stripe sandbox Customer Portal configuration and correction of the stale sandbox product copy.
-2. Promote the verified hardening branch, then run checkout -> signed webhook -> Pro entitlement -> Customer Portal -> cancellation.
+1. Sign into the protected Vercel preview, verify Google OAuth and password-reset return to that preview, then sign out/revoke the exposed OAuth test session.
+2. Run checkout -> signed webhook -> Pro entitlement -> Customer Portal -> cancellation without promoting production.
 3. Add an Anthropic key and test Pro credit accounting, then finish the remaining Supabase auth/cloud-sync edge-case tests.

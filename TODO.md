@@ -1,6 +1,6 @@
 # Daily Shine — TODO
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## P0 — Launch blockers
 
@@ -14,6 +14,8 @@ Last updated: 2026-10-05
 - [x] Smoke-test production domain after deployment.
 - [ ] Test email sign-up, confirmation, sign-in, sign-out, and password reset.
 - [ ] Test Google OAuth redirect and return flow.
+- [x] Set the Supabase Auth Site URL to the production domain and allow production, Vercel preview, and localhost redirect URLs.
+- [ ] Verify Google OAuth and password-reset redirects return to the protected hardening preview, then sign out/revoke the exposed OAuth test session.
 - [ ] Verify new user can create/update `user_data` and another user cannot read/write it.
 - [ ] Verify cloud data persists across sign-out/sign-in and a second device/browser.
 - [ ] Test authenticated `/api/ai` with Anthropic configured.
@@ -25,8 +27,8 @@ Last updated: 2026-10-05
 - [x] Verify the active Stripe sandbox price is exactly $7.97/month and matches the UI.
 - [x] Verify the Stripe sandbox webhook URL and core enabled events.
 - [ ] Verify the deployed Stripe webhook signing secret with a signed sandbox event.
-- [ ] Create the missing Stripe sandbox Customer Portal configuration (billing-change approval required).
-- [ ] Replace the stale “Unlimited AI” Stripe product description with the 300-credit model (billing-change approval required).
+- [x] Create the Stripe sandbox Customer Portal configuration and make it the active default.
+- [x] Replace the stale “Unlimited AI” Stripe product description with “300 AI credits/month.”
 - [ ] Run Stripe test subscription: checkout -> webhook -> Pro entitlement.
 - [ ] Verify subscription cancellation/update revokes or preserves access correctly.
 - [ ] Verify Customer Portal only opens for the authenticated user's Stripe customer.
