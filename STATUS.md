@@ -29,6 +29,9 @@ Daily Shine is the ACTIVE BUILD.
 - Supabase migration `harden_user_data_privileges` is applied: anonymous access is revoked and authenticated users only receive select/insert/update privileges, still restricted to their own row by RLS.
 - Supabase is ACTIVE_HEALTHY with email and Google users present; server-owned entitlement/usage tables remain inaccessible to normal client roles.
 - Supabase Auth Site URL is `https://daily-shine-tau.vercel.app`; redirect URLs allow the production app, Vercel hardening previews, and `http://localhost:3000/**` for local development.
+- Google OAuth passed on the Vercel hardening preview: the provider returned to the same preview origin, Supabase created the authenticated session, and the app loaded the signed-in dashboard.
+- The OAuth test session whose URL fragment was exposed was immediately signed out; Supabase reported no remaining active session for that test.
+- Password-reset requests now succeed from the preview and Supabase records the preview as the redirect origin. The previously missing recovery-return screen and authenticated password-update call are deployed on a READY hardening preview, and the recovery UI was verified there.
 - iPhone Free-version smoke test passed: account flow, core tracking/journaling, local-mode tools, persistence, Pro pricing/credit copy, and Add to Home Screen all appeared to work in Joey's test.
 - Free-local / 300-credit Pro model is deployed in the production bundle.
 - Production bundle no longer contains the old 3-free-AI / unlimited-AI messaging.
@@ -59,9 +62,8 @@ Daily Shine is the ACTIVE BUILD.
 
 ## Known broken / unverified
 
-- Hardening commits through `00e5bd1` are verified on a non-production branch/preview but have not yet been promoted to production; production remains on the last verified pre-hardening release.
-- Google OAuth successfully authenticated during Safari testing but fell back to the former `http://localhost:3000` Site URL because the preview origin was not allowlisted. The hosted URL configuration is corrected, but Google OAuth and password-reset return behavior still need an end-to-end test on the protected hardening preview.
-- The OAuth session whose URL fragment was exposed during testing must be signed out/revoked after verification and must not be reused.
+- The current hardening branch is not promoted; production remains on the last verified pre-hardening release.
+- Google OAuth is fixed and verified on preview. The password-reset email request and redirect origin are verified, but the emailed recovery link still needs one real click-through to prove the new-password screen and final password update end-to-end.
 - The Customer Portal configuration and product copy are corrected, but a real portal session is still unverified because the sandbox has no completed customer/subscription or Supabase entitlement row.
 - Stripe signing-secret alignment and the full checkout -> webhook -> entitlement -> portal -> cancellation path still need an authenticated end-to-end test.
 - `ANTHROPIC_API_KEY` is not present in Vercel, so real authenticated AI cannot work until a credential is added.
@@ -80,10 +82,10 @@ Daily Shine is the ACTIVE BUILD.
 
 ## Biggest blocker
 
-Authenticated preview verification. Supabase URL configuration is corrected, but Google OAuth and password-reset return behavior must pass on the Vercel hardening preview before the paid Stripe flow and production promotion.
+One final password-reset click-through, followed by the authenticated Stripe sandbox checkout -> webhook -> entitlement -> portal -> cancellation test. Production promotion remains intentionally blocked.
 
 ## Next three actions
 
-1. Sign into the protected Vercel preview, verify Google OAuth and password-reset return to that preview, then sign out/revoke the exposed OAuth test session.
+1. Click the newest reset email once and verify it returns to the hardening preview, displays the new-password screen, and updates the password.
 2. Run checkout -> signed webhook -> Pro entitlement -> Customer Portal -> cancellation without promoting production.
 3. Add an Anthropic key and test Pro credit accounting, then finish the remaining Supabase auth/cloud-sync edge-case tests.

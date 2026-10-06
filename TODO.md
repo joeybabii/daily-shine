@@ -8,14 +8,16 @@ Last updated: 2026-10-06
 - [x] Make the production build succeed without Stripe or other service secrets present.
 - [x] Stop trusting the request `Origin` header for Stripe return URLs.
 - [x] Verify the hardening branch in a READY Vercel preview.
-- [ ] Promote hardening commits through `bd48636` and verify the resulting Vercel production deployment.
+- [ ] Promote the current hardening branch and verify the resulting Vercel production deployment after preview auth and paid-flow tests pass.
 - [x] Credit model code is deployed: Free stays local-only; Pro has 300 monthly AI credits.
 - [x] Confirm latest `main` commit deploys successfully to Vercel.
 - [x] Smoke-test production domain after deployment.
 - [ ] Test email sign-up, confirmation, sign-in, sign-out, and password reset.
-- [ ] Test Google OAuth redirect and return flow.
+- [x] Test Google OAuth redirect and return flow on the Vercel hardening preview.
 - [x] Set the Supabase Auth Site URL to the production domain and allow production, Vercel preview, and localhost redirect URLs.
-- [ ] Verify Google OAuth and password-reset redirects return to the protected hardening preview, then sign out/revoke the exposed OAuth test session.
+- [x] Verify Google OAuth returns to the protected hardening preview, then sign out/revoke the exposed OAuth test session.
+- [x] Add the missing password-recovery return screen and authenticated password-update action.
+- [ ] Click through the newest reset email and verify preview return, new-password entry, and password update end-to-end.
 - [ ] Verify new user can create/update `user_data` and another user cannot read/write it.
 - [ ] Verify cloud data persists across sign-out/sign-in and a second device/browser.
 - [ ] Test authenticated `/api/ai` with Anthropic configured.
