@@ -2,11 +2,15 @@
 import { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
-export default function AuthScreen() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
-  const [mode, setMode] = useState('welcome'); // welcome, signin, signup, forgot
+export default function AuthScreen({ initialMode = 'welcome' }) {
+  const {
+    signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword,
+    updatePassword, finishPasswordRecovery,
+  } = useAuth();
+  const [mode, setMode] = useState(initialMode); // welcome, signin, signup, forgot, update-password
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,6 +60,27 @@ export default function AuthScreen() {
       setMode('signin');
     }
     setLoading(false);
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error } = await updatePassword(password);
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+    finishPasswordRecovery();
   };
 
   const inputStyle = {
@@ -115,6 +140,7 @@ export default function AuthScreen() {
             {mode === 'welcome' ? 'Your positivity journey starts here' :
              mode === 'signup' ? 'Create your account' :
              mode === 'forgot' ? 'Reset your password' :
+             mode === 'update-password' ? 'Choose a new password' :
              'Welcome back'}
           </h1>
           <p style={{
@@ -124,6 +150,7 @@ export default function AuthScreen() {
             {mode === 'welcome' ? 'Sign in to save your progress across all your devices.' :
              mode === 'signup' ? 'Start tracking your growth today.' :
              mode === 'forgot' ? "We'll send you a reset link." :
+             mode === 'update-password' ? 'Use at least 8 characters.' :
              'Pick up right where you left off.'}
           </p>
         </div>
@@ -281,6 +308,31 @@ export default function AuthScreen() {
               }}>
                 Back to <span style={{ color: '#C4764A', fontWeight: 600 }}>Sign in</span>
               </button>
+            </div>
+          )}
+
+          {/* Complete password recovery mode */}
+          {mode === 'update-password' && (
+            <div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <input
+                  type="password" value={password}
+                  onChange={e => { setPassword(e.target.value); setError(''); }}
+                  placeholder="New password" autoComplete="new-password" style={inputStyle}
+                />
+                <input
+                  type="password" value={confirmPassword}
+                  onChange={e => { setConfirmPassword(e.target.value); setError(''); }}
+                  placeholder="Confirm new password" autoComplete="new-password" style={inputStyle}
+                  onKeyDown={e => e.key === 'Enter' && handleUpdatePassword(e)}
+                />
+                <button onClick={handleUpdatePassword} disabled={loading} style={{
+                  ...btnPrimary,
+                  opacity: loading ? 0.7 : 1,
+                }}>
+                  {loading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -4,7 +4,7 @@ import AuthScreen from './lib/AuthScreen';
 import DailyShine from './DailyShine';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, passwordRecovery } = useAuth();
 
   if (loading) {
     return (
@@ -26,6 +26,10 @@ function AppContent() {
         </div>
       </div>
     );
+  }
+
+  if (passwordRecovery) {
+    return <AuthScreen initialMode="update-password" />;
   }
 
   if (!user) {
